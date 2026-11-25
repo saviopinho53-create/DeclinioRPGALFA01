@@ -1,0 +1,3121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DECLÍNIO: RPG // Ficha de Sobrevivente (ALFA 0.1)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            paper: '#f6f5f0',
+            ink: '#111111',
+            muted: '#525252',
+            borderink: '#1a1a1a',
+            accent: '#991b1b'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-page: #e5e4df;
+      --bg-sheet: #ffffff;
+      --bg-panel: #f7f7f5;
+      --text-main: #111111;
+      --text-muted: #525252;
+      --border-main: #111111;
+      --border-sub: #a3a3a3;
+      --accent-red: #991b1b;
+    }
+
+    body.dark-mode {
+      --bg-page: #0c0c0c;
+      --bg-sheet: #141414;
+      --bg-panel: #1d1d1d;
+      --text-main: #f2f2f2;
+      --text-muted: #a3a3a3;
+      --border-main: #e5e5e5;
+      --border-sub: #404040;
+      --accent-red: #ef4444;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .sheet-container {
+      background-color: var(--bg-sheet);
+      border: 2px solid var(--border-main);
+      box-shadow: 6px 6px 0px var(--border-main);
+    }
+
+    .dossier-box {
+      background-color: var(--bg-panel);
+      border: 1.5px solid var(--border-main);
+    }
+
+    .dossier-card {
+      background-color: var(--bg-sheet);
+      border: 1.5px solid var(--border-main);
+    }
+
+    .dossier-input {
+      background-color: var(--bg-sheet);
+      color: var(--text-main);
+      border: 1.5px solid var(--border-main);
+    }
+
+    .dossier-input:focus {
+      outline: none;
+      box-shadow: 2px 2px 0px var(--border-main);
+    }
+
+    .btn-tactical {
+      border: 1.5px solid var(--border-main);
+      background-color: var(--bg-sheet);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      text-transform: uppercase;
+      transition: all 0.1s ease;
+    }
+
+    .btn-tactical:hover:not(:disabled) {
+      background-color: var(--text-main);
+      color: var(--bg-sheet);
+    }
+
+    .btn-tactical:active:not(:disabled) {
+      transform: translate(1px, 1px);
+    }
+
+    .btn-tactical:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-tactical-solid {
+      border: 1.5px solid var(--border-main);
+      background-color: var(--text-main);
+      color: var(--bg-sheet);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      text-transform: uppercase;
+      transition: all 0.1s ease;
+    }
+
+    .btn-tactical-solid:hover:not(:disabled) {
+      opacity: 0.85;
+    }
+
+    .pip-box {
+      width: 26px;
+      height: 26px;
+      border: 2px solid var(--border-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 12px;
+      transition: all 0.1s;
+    }
+
+    .pip-stress.active {
+      background-color: #991b1b;
+      border-color: #991b1b;
+      color: #ffffff;
+    }
+
+    .pip-will.active {
+      background-color: var(--text-main);
+      color: var(--bg-sheet);
+    }
+
+    .tab-btn.active {
+      background-color: var(--text-main);
+      color: var(--bg-sheet);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-panel); }
+    ::-webkit-scrollbar-thumb { background: var(--border-sub); border: 1px solid var(--border-main); }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .sheet-container {
+        box-shadow: none !important;
+        border: 2px solid #000000 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+      .print-show-all {
+        display: block !important;
+      }
+      .page-break {
+        page-break-before: always;
+        margin-top: 24px;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen py-4 px-2 sm:px-4 md:px-6">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none no-print"></div>
+
+  <!-- TOP ACTION BAR (NO PRINT) -->
+  <header class="max-w-6xl mx-auto mb-4 no-print">
+    <div class="sheet-container p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 text-[11px] font-mono font-extrabold tracking-widest uppercase border border-current">ALFA 0.1</span>
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight uppercase">DECLÍNIO: RPG</h1>
+        </div>
+        <p class="text-xs italic opacity-75 mt-0.5">"Cada bala importa. Cada refeição conta. Cada ferimento pode ser o último."</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <button onclick="loadRicardoExample()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm" title="Carregar exemplo oficial do manual">
+          Exemplo: Ricardo
+        </button>
+        <button onclick="openConfirmReset()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
+          Nova Ficha
+        </button>
+        <button onclick="exportJSON()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
+          Exportar JSON
+        </button>
+        <label class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm cursor-pointer">
+          Importar JSON
+          <input type="file" id="import-file" accept=".json" class="hidden" onchange="importJSON(event)" />
+        </label>
+        <button onclick="window.print()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
+          Imprimir
+        </button>
+        <button onclick="toggleTheme()" id="theme-toggle-btn" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm" title="Alternar Papel / Modo Escuro">
+          🌓 Tema
+        </button>
+      </div>
+    </div>
+
+    <!-- PAGE NAVIGATION TABS -->
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-3">
+      <div class="flex gap-2">
+        <button id="tab-p1" onclick="switchPage(1)" class="tab-btn active btn-tactical px-4 py-2 text-xs sm:text-sm rounded-sm">
+          PÁG. 01 // REGISTRO & PERÍCIAS
+        </button>
+        <button id="tab-p2" onclick="switchPage(2)" class="tab-btn btn-tactical px-4 py-2 text-xs sm:text-sm rounded-sm">
+          PÁG. 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 text-xs font-mono">
+        <span id="save-indicator" class="opacity-70">● Salvo localmente</span>
+        <button onclick="openRulesModal()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">
+          📖 Consulta Rápida
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN SHEET WRAPPER -->
+  <main class="max-w-6xl mx-auto">
+
+    <!-- ===================================================================== -->
+    <!-- PÁGINA 01 // REGISTRO                                                 -->
+    <!-- ===================================================================== -->
+    <section id="page-1" class="sheet-container p-4 sm:p-6 print-show-all">
+      <!-- Dossier Header -->
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-current pb-2 mb-4 gap-2">
+        <div>
+          <span class="font-mono text-xs font-bold tracking-widest uppercase opacity-75">DECLÍNIO: RPG // FICHA DE SOBREVIVENTE (PÁGINA 1 DE 2)</span>
+          <h2 class="text-2xl sm:text-3xl font-black tracking-tight uppercase">PÁG. 01 // REGISTRO</h2>
+        </div>
+        <p class="font-mono text-xs italic opacity-80">"Cada bala importa. Cada refeição conta. Cada ferimento pode ser o último."</p>
+      </div>
+
+      <!-- IDENTITY & BUILD GRID -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
+        <!-- Name & Concept -->
+        <div class="lg:col-span-5 dossier-box p-3 rounded-sm flex flex-col gap-3">
+          <div>
+            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">NOME DO SOBREVIVENTE</label>
+            <input type="text" id="char-name" oninput="updateField('name', this.value)" placeholder="Ex: Ricardo Gomes" class="dossier-input w-full px-2.5 py-1.5 text-base font-bold rounded-sm" />
+          </div>
+          <div class="flex-1 flex flex-col">
+            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">CONCEITO & HISTÓRICO</label>
+            <textarea id="char-concept" oninput="updateField('concept', this.value)" rows="3" placeholder="Quem você era antes do colapso? Como lida com o mundo atual e o estresse?" class="dossier-input w-full px-2.5 py-1.5 text-xs leading-relaxed rounded-sm flex-1"></textarea>
+          </div>
+        </div>
+
+        <!-- Tipo, Estilo, Arquétipo, Nível -->
+        <div class="lg:col-span-7 dossier-box p-3 rounded-sm grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">TIPO (Aumento de Passo & Recursos)</label>
+            <select id="char-tipo" onchange="changeTipo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
+              <option value="">-- Selecione o Tipo --</option>
+              <option value="robusto">Robusto (+1 CORPO | PV d+8 | PC d+3)</option>
+              <option value="esperto">Esperto (+1 INTELECTO | PV d+4 | PC d+4)</option>
+              <option value="inspirador">Inspirador (+1 ALMA | PV d+6 | PC d+5)</option>
+            </select>
+            <p id="tipo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Escolha um Tipo para aplicar bônus de atributo, PV, PC e perícias iniciais.</p>
+          </div>
+
+          <div>
+            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">ESTILO (Iniciativa & Tática)</label>
+            <select id="char-estilo" onchange="changeEstilo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
+              <option value="">-- Selecione o Estilo --</option>
+              <option value="pratico">Prático (Age Primeiro na Iniciativa)</option>
+              <option value="tatico">Tático (Age Por Último na Iniciativa)</option>
+              <option value="pragmatico">Pragmático (Escolhe Quando Agir)</option>
+            </select>
+            <p id="estilo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Define sua ordem natural na iniciativa e habilidades de Nível 1 e 6.</p>
+          </div>
+
+          <div>
+            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">ARQUÉTIPO (Ocupação Pré-Colapso)</label>
+            <select id="char-arquetipo" onchange="changeArquetipo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
+              <option value="">-- Selecione um dos 20 Arquétipos --</option>
+            </select>
+            <p id="arquetipo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Concede 2 perícias treinadas (d8 e d6) e habilidades nos níveis 1, 3, 7 e 11.</p>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-mono text-[11px] font-bold uppercase tracking-wider">NÍVEL (1 A 12)</label>
+              <span id="level-milestone-badge" class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">NÍVEL INICIAL</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="changeLevel(-1)" class="btn-tactical w-9 h-9 text-base rounded-sm no-print">-</button>
+              <div id="char-level-display" class="dossier-input flex-1 h-9 flex items-center justify-center font-mono text-lg font-black rounded-sm">1</div>
+              <button onclick="changeLevel(1)" class="btn-tactical w-9 h-9 text-base rounded-sm no-print">+</button>
+            </div>
+            <p id="level-next-hint" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Nv 2: +1 Habilidade Geral</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTRIBUTES, VITALS & STRESS/WILLPOWER -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
+        
+        <!-- ATRIBUTOS (4 cols) -->
+        <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-current pb-1.5 mb-2">
+              <h3 class="font-mono text-sm font-black uppercase tracking-wider">ATRIBUTOS</h3>
+              <button onclick="toggleFreeMode()" id="free-mode-btn" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print" title="Alterna entre distribuição oficial [d8, d8, d6] + Tipo ou edição livre">
+                Modo: Oficial
+              </button>
+            </div>
+            <p id="attr-helper-text" class="text-[11px] font-mono opacity-80 mb-3">
+              Base: distribua <b>d8, d8, d6</b>. O Tipo aplica +1 passo automático.
+            </p>
+
+            <div class="space-y-2.5" id="attributes-container">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-dashed border-current flex justify-between text-[10px] font-mono opacity-75">
+            <span>d4: Nenhuma</span>
+            <span>d6: Básica</span>
+            <span>d8: Aptidão</span>
+            <span>d10: Acima</span>
+            <span>d12: Ápice</span>
+          </div>
+        </div>
+
+        <!-- PV, PC, GUARDA, DESLOCAMENTO, PP (4 cols) -->
+        <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between gap-3">
+          <!-- PV -->
+          <div class="dossier-card p-2.5 rounded-sm">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-mono text-xs font-black uppercase">PONTOS DE VIDA (PV)</span>
+              <span id="pv-formula-hint" class="font-mono text-[10px] opacity-70">Max(CORPO) + Tipo</span>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1 no-print">
+                <button onclick="adjustResource('pv', -5)" class="btn-tactical px-2 py-1 text-xs rounded-sm">-5</button>
+                <button onclick="adjustResource('pv', -1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">-1</button>
+              </div>
+              <div class="flex items-baseline gap-1 font-mono">
+                <input type="number" id="pv-current" onchange="setResource('pv', this.value)" class="dossier-input w-14 text-center text-xl font-black py-0.5 rounded-sm" />
+                <span class="text-lg font-bold">/</span>
+                <span id="pv-max" class="text-xl font-black">10</span>
+              </div>
+              <div class="flex items-center gap-1 no-print">
+                <button onclick="adjustResource('pv', 1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">+1</button>
+                <button onclick="adjustResource('pv', 5)" class="btn-tactical px-2 py-1 text-xs rounded-sm">+5</button>
+              </div>
+            </div>
+            <div id="zero-pv-warning" class="hidden mt-1.5 p-1.5 bg-red-800 text-white font-mono text-[10px] font-bold uppercase text-center rounded-sm">
+              ⚠ 0 PV: MORRENDO & INCONSCIENTE (Sobrevive 3 rodadas | DT Medicina: 12 + Excedente)
+            </div>
+          </div>
+
+          <!-- PC -->
+          <div class="dossier-card p-2.5 rounded-sm">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-mono text-xs font-black uppercase">PONTOS DE CONCENTRAÇÃO (PC)</span>
+              <span id="pc-formula-hint" class="font-mono text-[10px] opacity-70">Max(ALMA) + Tipo</span>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1 no-print">
+                <button onclick="adjustResource('pc', -3)" class="btn-tactical px-2 py-1 text-xs rounded-sm">-3</button>
+                <button onclick="adjustResource('pc', -1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">-1</button>
+              </div>
+              <div class="flex items-baseline gap-1 font-mono">
+                <input type="number" id="pc-current" onchange="setResource('pc', this.value)" class="dossier-input w-14 text-center text-xl font-black py-0.5 rounded-sm" />
+                <span class="text-lg font-bold">/</span>
+                <span id="pc-max" class="text-xl font-black">10</span>
+              </div>
+              <div class="flex items-center gap-1 no-print">
+                <button onclick="adjustResource('pc', 1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">+1</button>
+                <button onclick="adjustResource('pc', 3)" class="btn-tactical px-2 py-1 text-xs rounded-sm">+3</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- GUARDA, PP & DESLOCAMENTO -->
+          <div class="grid grid-cols-3 gap-2">
+            <div class="dossier-card p-2 text-center rounded-sm">
+              <span class="block font-mono text-[10px] font-bold uppercase opacity-75">GUARDA</span>
+              <span id="stat-guarda" class="block font-mono text-2xl font-black mt-0.5">7</span>
+              <span id="guarda-breakdown" class="block font-mono text-[9px] opacity-70 truncate">Base 7</span>
+            </div>
+            <div class="dossier-card p-2 text-center rounded-sm">
+              <span class="block font-mono text-[10px] font-bold uppercase opacity-75">PROTEÇÃO (PP)</span>
+              <span id="stat-pp" class="block font-mono text-2xl font-black mt-0.5">0</span>
+              <span id="pp-breakdown" class="block font-mono text-[9px] opacity-70 truncate">Perm + Temp</span>
+            </div>
+            <div class="dossier-card p-2 text-center rounded-sm">
+              <span class="block font-mono text-[10px] font-bold uppercase opacity-75">DESLOC.</span>
+              <span id="stat-speed" class="block font-mono text-2xl font-black mt-0.5">9m</span>
+              <span id="speed-squares" class="block font-mono text-[9px] opacity-70">6 quad.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ESTRESSE (6) / VONTADE (3) & DESCANSOS (4 cols) -->
+        <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between gap-2.5">
+          <div>
+            <div class="flex items-center justify-between border-b border-current pb-1 mb-2">
+              <h3 class="font-mono text-xs font-black uppercase">ESTRESSE (6) & VONTADE (<span id="will-max-label">3</span>)</h3>
+              <span class="font-mono text-[10px] opacity-75">6º Estresse = Colapso</span>
+            </div>
+
+            <!-- Stress Pips -->
+            <div class="mb-2.5">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-mono text-[11px] font-bold uppercase text-red-700 dark:text-red-400">MARCADORES DE ESTRESSE</span>
+                <span id="stress-count-label" class="font-mono text-xs font-bold">0 / 6</span>
+              </div>
+              <div class="flex items-center gap-1.5" id="stress-pips-container">
+                <!-- 6 pips -->
+              </div>
+            </div>
+
+            <!-- Willpower Pips -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-mono text-[11px] font-bold uppercase">MARCADORES DE VONTADE</span>
+                <span id="will-count-label" class="font-mono text-xs font-bold">0 / 3</span>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5" id="will-pips-container">
+                  <!-- 3 pips -->
+                </div>
+                <div class="flex gap-1 no-print">
+                  <button onclick="spendWillpower('stress')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm" title="Gasta 1 Vontade para remover 1 Estresse ou Dado de Medo">
+                    -1 Estresse
+                  </button>
+                  <button onclick="spendWillpower('reroll')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm" title="Gasta 1 Vontade para refazer um teste ou Impulso de Sobrevivente">
+                    Usar Vontade
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DESCANSOS -->
+          <div class="pt-2 border-t border-current no-print">
+            <span class="block font-mono text-[10px] font-bold uppercase opacity-75 mb-1.5">DESCANSOS & RECUPERAÇÃO</span>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button onclick="openAlertRestModal()" class="btn-tactical py-1.5 px-2 text-[10px] rounded-sm">
+                ⛺ Descanso Alerta
+              </button>
+              <button onclick="takeSafeRest()" class="btn-tactical-solid py-1.5 px-2 text-[10px] rounded-sm">
+                🏠 Descanso Seguro
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVE CONDITIONS BAR -->
+      <div class="dossier-box p-2.5 rounded-sm mb-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+          <span class="font-mono text-xs font-black uppercase tracking-wider">CONDIÇÕES & SITUAÇÕES EXTREMAS ATIVAS</span>
+          <span class="font-mono text-[10px] opacity-75">Clique para ativar/desativar (aplica penalidades automáticas na Guarda/Deslocamento)</span>
+        </div>
+        <div id="conditions-container" class="flex flex-wrap gap-1.5">
+          <!-- Rendered by JS -->
+        </div>
+        <div id="active-conditions-notes" class="mt-2 space-y-1 text-xs font-mono"></div>
+      </div>
+
+      <!-- SKILLS SECTION (26 PERÍCIAS) -->
+      <div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-current pb-1.5 mb-3 gap-2">
+          <div>
+            <h3 class="font-mono text-base font-black uppercase tracking-wider">PERÍCIAS (26) // Destreinado: d4 | Treinamento: d6 a d12</h3>
+          </div>
+          <div id="skill-budget-tracker" class="font-mono text-xs px-2.5 py-1 dossier-box rounded-sm">
+            <!-- Shows initial skill allocation status -->
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3" id="skills-grid">
+          <!-- 4 Categories rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- PÁGINA 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO                       -->
+    <!-- ===================================================================== -->
+    <section id="page-2" class="sheet-container p-4 sm:p-6 hidden print-show-all page-break">
+      <!-- Dossier Header -->
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-current pb-2 mb-4 gap-2">
+        <div>
+          <span class="font-mono text-xs font-bold tracking-widest uppercase opacity-75">DECLÍNIO: RPG // FICHA DE SOBREVIVENTE (PÁGINA 2 DE 2)</span>
+          <h2 class="text-2xl sm:text-3xl font-black tracking-tight uppercase">PÁG. 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO</h2>
+        </div>
+        <div class="font-mono text-xs font-bold">
+          SOBREVIVENTE: <span id="p2-char-name" class="underline">SEM NOME</span> (NV. <span id="p2-char-level">1</span>)
+        </div>
+      </div>
+
+      <!-- TOP ROW: HABILIDADES & ESTRESSE PERMANENTE -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+        
+        <!-- HABILIDADES DE SOBREVIVENTE & PROGRESSÃO (8 cols) -->
+        <div class="lg:col-span-8 dossier-box p-3.5 rounded-sm">
+          <div class="flex flex-wrap items-center justify-between border-b-2 border-current pb-1.5 mb-3 gap-2">
+            <div>
+              <h3 class="font-mono text-sm font-black uppercase tracking-wider">HABILIDADES DE SOBREVIVENTE & PROGRESSÃO</h3>
+              <p class="font-mono text-[11px] opacity-75">Tipo, Estilo, Arquétipo e Habilidades Gerais desbloqueadas por nível</p>
+            </div>
+            <span class="font-mono text-[11px] font-bold px-2 py-0.5 border border-current">Nível Atual: <span id="p2-level-badge">1</span>/12</span>
+          </div>
+
+          <!-- Progression Slots List -->
+          <div id="abilities-list" class="space-y-3">
+            <!-- Rendered dynamically based on level, tipo, estilo, arquetipo and general abilities -->
+          </div>
+        </div>
+
+        <!-- ESTRESSE PERMANENTE / SEQUELAS (4 cols) -->
+        <div class="lg:col-span-4 dossier-box p-3.5 rounded-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b-2 border-current pb-1.5 mb-2">
+              <h3 class="font-mono text-sm font-black uppercase tracking-wider">ESTRESSE PERMANENTE</h3>
+              <span class="font-mono text-[10px] font-bold text-red-700 dark:text-red-400">MÁX. 4 SEQUELAS</span>
+            </div>
+            <p class="text-[11px] opacity-80 mb-3 leading-snug">
+              Ao preencher a 6ª caixa de Estresse, você sofre Colapso Mental e ganha 1 Sequela. Ao receber a <b>5ª Sequela</b>, o personagem torna-se <b>INJOGÁVEL</b>.
+            </p>
+
+            <div class="space-y-2.5" id="permanent-stress-list">
+              <!-- 4 Trauma Slots -->
+            </div>
+
+            <div id="unplayable-warning" class="hidden mt-3 p-2 bg-red-800 text-white font-mono text-xs font-black uppercase text-center rounded-sm">
+              ☠ LIMITE DE TRAUMAS EXCEDIDO (5ª SEQUELA): SOBREVIVENTE INJOGÁVEL
+            </div>
+          </div>
+
+          <!-- Quick 1d10 Reference -->
+          <div class="mt-4 pt-3 border-t border-current no-print">
+            <details class="text-xs">
+              <summary class="font-mono font-bold uppercase cursor-pointer select-none">
+                📋 Tabela 1d10: Sequelas & Estresse Temp.
+              </summary>
+              <div class="mt-2 space-y-2 max-h-60 overflow-y-auto pr-1 text-[11px] leading-tight">
+                <div class="dossier-card p-2 rounded-sm">
+                  <strong class="font-mono block mb-1 underline">1d10 — ESTRESSE PERMANENTE:</strong>
+                  <ol class="list-decimal pl-4 space-y-0.5">
+                    <li><b>-2 PV Máximos</b> permanentemente.</li>
+                    <li><b>-2 PC Máximos</b> permanentemente.</li>
+                    <li><b>-1 Espaço de Vontade</b> permanente (máx 2).</li>
+                    <li><b>-1 Passo em Atributo</b> permanente (mín d4).</li>
+                    <li><b>-1 Passo em Perícia</b> treinada permanente.</li>
+                    <li><b>Paranoia Severa:</b> exige 1 PC para aceitar ação Ajudar.</li>
+                    <li><b>Mente Instável:</b> -1 fixo em testes de INTELECTO.</li>
+                    <li><b>Mão Trêmula:</b> -1 fixo em testes de CORPO.</li>
+                    <li><b>Alma Cansada:</b> -1 fixo em testes de ALMA.</li>
+                    <li><b>Nada:</b> mente suportou sem sequela desta vez.</li>
+                  </ol>
+                </div>
+                <div class="dossier-card p-2 rounded-sm">
+                  <strong class="font-mono block mb-1 underline">1d10 — ESTRESSE TEMPORÁRIO (Cena/Descanso):</strong>
+                  <ol class="list-decimal pl-4 space-y-0.5">
+                    <li>-1 passo em Perícias Mentais até fim da cena.</li>
+                    <li>-1 passo em um Atributo até fim da cena.</li>
+                    <li>-1 passo em Perícias Físicas até fim da cena.</li>
+                    <li>-1 passo em Perícias Emocionais até fim da cena.</li>
+                    <li><b>Dado de Medo (d6–d10):</b> descarta dados &le; Medo.</li>
+                    <li>Perde <b>1d4 PV</b> imediatamente.</li>
+                    <li>Perde <b>1d4 PC</b> imediatamente.</li>
+                    <li>Perde <b>1 Marcador de Vontade</b> atual.</li>
+                    <li>Perde todas as ações na próxima rodada.</li>
+                    <li><b>Nada:</b> engole o pavor e segue em frente.</li>
+                  </ol>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM ROW: INVENTÁRIO & SLOTS DE CARGA -->
+      <div class="dossier-box p-3.5 rounded-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-current pb-2 mb-3 gap-2">
+          <div>
+            <h3 class="font-mono text-base font-black uppercase tracking-wider">INVENTÁRIO & SLOTS DE CARGA</h3>
+            <p class="font-mono text-[11px] opacity-75">
+              Agrupáveis: 1 slot a cada 10 un. | Coldre: -1 arma leve | Bandoleira: -1 slot arma pesada | Aljava/Bolsa: até 50 projéteis em 1 slot
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div id="slots-counter-box" class="px-3 py-1.5 border-2 border-current font-mono text-xs sm:text-sm font-black rounded-sm">
+              CARGA: <span id="slots-used">0</span> / <span id="slots-max">20</span> SLOTS FIXOS
+            </div>
+            <button onclick="openCatalogModal()" class="btn-tactical-solid px-3 py-2 text-xs rounded-sm no-print">
+              + Catálogo Oficial
+            </button>
+            <button onclick="openCustomItemModal()" class="btn-tactical px-3 py-2 text-xs rounded-sm no-print">
+              + Item Livre
+            </button>
+          </div>
+        </div>
+
+        <div id="overload-warning" class="hidden mb-3 p-2 bg-red-800 text-white font-mono text-xs font-black uppercase text-center rounded-sm">
+          ⚠ SOBRECARGA: Você ultrapassou sua capacidade máxima de slots! Seu deslocamento foi reduzido a 0m.
+        </div>
+
+        <!-- INVENTORY LIST -->
+        <div id="inventory-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div id="inventory-empty" class="text-center py-8 opacity-60 font-mono text-xs">
+          Mochila vazia. Clique em <b>"+ Catálogo Oficial"</b> para equipar armas, proteções, munições e suprimentos.
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: CATÁLOGO OFICIAL DE EQUIPAMENTOS                               -->
+  <!-- ===================================================================== -->
+  <div id="catalog-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
+    <div class="sheet-container w-full max-w-4xl max-h-[90vh] flex flex-col rounded-sm overflow-hidden">
+      <div class="p-3 sm:p-4 border-b-2 border-current flex items-center justify-between">
+        <div>
+          <span class="font-mono text-[10px] uppercase tracking-widest opacity-75">DECLÍNIO: RPG // ARSENAL & SUPRIMENTOS</span>
+          <h3 class="font-mono text-lg font-black uppercase">CATÁLOGO OFICIAL DE EQUIPAMENTOS</h3>
+        </div>
+        <button onclick="closeCatalogModal()" class="btn-tactical px-3 py-1 text-xs rounded-sm">✕ Fechar</button>
+      </div>
+
+      <!-- Category Filter & Search -->
+      <div class="p-3 dossier-box border-b border-current flex flex-col sm:flex-row gap-2 justify-between">
+        <div class="flex flex-wrap gap-1" id="catalog-tabs">
+          <button onclick="setCatalogCategory('melee')" data-cat="melee" class="cat-tab btn-tactical-solid px-2.5 py-1 text-xs rounded-sm">Armas Brancas</button>
+          <button onclick="setCatalogCategory('ranged')" data-cat="ranged" class="cat-tab btn-tactical px-2.5 py-1 text-xs rounded-sm">Armas à Distância</button>
+          <button onclick="setCatalogCategory('explosives')" data-cat="explosives" class="cat-tab btn-tactical px-2.5 py-1 text-xs rounded-sm">Explosivos</button>
+          <button onclick="setCatalogCategory('armor')" data-cat="armor" class="cat-tab btn-tactical px-2.5 py-1 text-xs rounded-sm">Proteções</button>
+          <button onclick="setCatalogCategory('supplies')" data-cat="supplies" class="cat-tab btn-tactical px-2.5 py-1 text-xs rounded-sm">Suprimentos & Acessórios</button>
+        </div>
+        <input type="text" id="catalog-search" oninput="renderCatalogItems()" placeholder="Buscar item..." class="dossier-input px-2.5 py-1 text-xs rounded-sm sm:w-52" />
+      </div>
+
+      <!-- Catalog Items Grid -->
+      <div id="catalog-items-container" class="p-3 sm:p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: ITEM CUSTOMIZADO                                               -->
+  <!-- ===================================================================== -->
+  <div id="custom-item-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-4 no-print">
+    <div class="sheet-container w-full max-w-md p-4 rounded-sm">
+      <div class="flex items-center justify-between border-b-2 border-current pb-2 mb-3">
+        <h3 class="font-mono text-base font-black uppercase">ADICIONAR ITEM CUSTOMIZADO</h3>
+        <button onclick="closeCustomItemModal()" class="btn-tactical px-2 py-0.5 text-xs">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-mono font-bold uppercase mb-1">Nome do Item</label>
+          <input type="text" id="custom-name" placeholder="Ex: Chave do Gerador, Corda 15m..." class="dossier-input w-full p-2 rounded-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-mono font-bold uppercase mb-1">Quantidade</label>
+            <input type="number" id="custom-qty" value="1" min="1" class="dossier-input w-full p-2 rounded-sm" />
+          </div>
+          <div>
+            <label class="block font-mono font-bold uppercase mb-1">Slots por Unidade</label>
+            <input type="number" id="custom-slots" value="1" min="0" step="1" class="dossier-input w-full p-2 rounded-sm" />
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="custom-stackable" class="w-4 h-4" />
+          <label for="custom-stackable" class="font-mono text-[11px]">Item agrupável (1 slot a cada 10 unidades)</label>
+        </div>
+        <div>
+          <label class="block font-mono font-bold uppercase mb-1">Descrição / Notas</label>
+          <input type="text" id="custom-desc" placeholder="Detalhes, efeitos ou observações..." class="dossier-input w-full p-2 rounded-sm" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="closeCustomItemModal()" class="btn-tactical px-3 py-1.5 rounded-sm">Cancelar</button>
+          <button onclick="addCustomItem()" class="btn-tactical-solid px-4 py-1.5 rounded-sm">Adicionar à Mochila</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: DESCANSO ALERTA                                                -->
+  <!-- ===================================================================== -->
+  <div id="alert-rest-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-4 no-print">
+    <div class="sheet-container w-full max-w-md p-4 rounded-sm">
+      <div class="flex items-center justify-between border-b-2 border-current pb-2 mb-3">
+        <h3 class="font-mono text-base font-black uppercase">⛺ DESCANSO ALERTA (1h a 3h)</h3>
+        <button onclick="closeAlertRestModal()" class="btn-tactical px-2 py-0.5 text-xs">✕</button>
+      </div>
+      <p class="text-xs mb-3 leading-relaxed">
+        Pausa breve e tensa em campo aberto. Escolha <b>uma</b> das duas opções de recuperação abaixo (não remove Exaustão nem recupera habilidades diárias):
+      </p>
+      <div class="space-y-2">
+        <button onclick="executeAlertRest('vitals')" class="btn-tactical w-full p-3 text-left rounded-sm">
+          <span class="block font-black text-xs">OPÇÃO A: RECUPERAR FÔLEGO</span>
+          <span id="alert-rest-vitals-desc" class="block text-[11px] opacity-80 mt-0.5">Recupera +4 PV e +4 PC.</span>
+        </button>
+        <button onclick="executeAlertRest('stress')" class="btn-tactical w-full p-3 text-left rounded-sm">
+          <span class="block font-black text-xs">OPÇÃO B: ACALMAR A MENTE</span>
+          <span class="block text-[11px] opacity-80 mt-0.5">Remove 1 Marcador de Estresse (ou encerra Efeito Temporário).</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: CONSULTA RÁPIDA DE REGRAS                                      -->
+  <!-- ===================================================================== -->
+  <div id="rules-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
+    <div class="sheet-container w-full max-w-3xl max-h-[88vh] flex flex-col rounded-sm overflow-hidden">
+      <div class="p-3 sm:p-4 border-b-2 border-current flex items-center justify-between">
+        <h3 class="font-mono text-base sm:text-lg font-black uppercase">📖 GUIA RÁPIDO DE REGRAS — DECLÍNIO ALFA 0.1</h3>
+        <button onclick="closeRulesModal()" class="btn-tactical px-3 py-1 text-xs rounded-sm">✕ Fechar</button>
+      </div>
+      <div class="p-4 overflow-y-auto space-y-4 text-xs leading-relaxed">
+        <div class="dossier-box p-3 rounded-sm">
+          <h4 class="font-mono font-black uppercase mb-1">1. RESOLUÇÃO DE TESTES, RA & RB</h4>
+          <p>Role <b>Atributo + Perícia</b> (máximo de 4 dados válidos; se rolar 3 ou 4, soma os 3 maiores) vs. <b>DT</b>.</p>
+          <ul class="list-disc pl-4 mt-1 space-y-1">
+            <li><b>Rolagem Alta (RA):</b> Maior valor entre os dados válidos.</li>
+            <li><b>Rolagem Baixa (RB):</b> Menor valor entre os dados válidos. <b>Dano padrão = RB + bônus da arma</b>.</li>
+            <li><b>Sucesso Crítico:</b> Dois dados válidos iguais com valor <b>&ge; 6</b>. Sucesso automático + dobra o dado de dano (ex: RB + RB + bônus).</li>
+            <li><b>Falha Crítica:</b> Dois ou mais resultados <b>1</b>. Falha automática + consequências (arma trava/quebra).</li>
+          </ul>
+        </div>
+
+        <div class="dossier-box p-3 rounded-sm">
+          <h4 class="font-mono font-black uppercase mb-1">2. TABELA DE DIFICULDADES (DT)</h4>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 font-mono text-[11px]">
+            <div class="dossier-card p-1.5"><b>DT 5:</b> Fácil</div>
+            <div class="dossier-card p-1.5"><b>DT 7:</b> Moderada</div>
+            <div class="dossier-card p-1.5"><b>DT 10:</b> Desafiadora</div>
+            <div class="dossier-card p-1.5"><b>DT 13:</b> Difícil</div>
+            <div class="dossier-card p-1.5"><b>DT 16:</b> Muito Difícil</div>
+            <div class="dossier-card p-1.5"><b>DT 20:</b> Quase Impossível</div>
+          </div>
+        </div>
+
+        <div class="dossier-box p-3 rounded-sm">
+          <h4 class="font-mono font-black uppercase mb-1">3. ESTRUTURA DA RODADA DE COMBATE (6 SEGUNDOS)</h4>
+          <p><b>Ordem de Iniciativa:</b> 1º Práticos &rarr; Pragmáticos (escolhem quando agir) &rarr; Último Táticos.</p>
+          <p class="mt-1"><b>1. Fase de Preparação:</b> Deslocamento (9m/6 quad.) + Ação Pequena (sacar/trocar item, recarregar besta leve) OU Ação Principal Não-Ofensiva (primeiros socorros, habilidades táticas — abdica do ataque).</p>
+          <p class="mt-1"><b>2. Fase de Ataques:</b> Quem não usou Ação Principal na preparação realiza ataques (CORPO + Perícia vs. Guarda). <i>Pragmáticos</i> podem fazer ações não-ofensivas na Fase de Ataques.</p>
+          <p class="mt-1"><b>Reação (1/rodada):</b> Esquiva (rola CORPO + Reflexos; se maior que Guarda, substitui a Guarda contra aquele ataque).</p>
+        </div>
+
+        <div class="dossier-box p-3 rounded-sm">
+          <h4 class="font-mono font-black uppercase mb-1">4. SUBSISTEMAS DE TENSÃO</h4>
+          <ul class="list-disc pl-4 space-y-1">
+            <li><b>Equilíbrio:</b> Role <b>2d10</b>. Passa se forem iguais ou diferença de 1. Pode gastar Dados de Equilíbrio (d4, metade do máx. de Atletismo) para somar a um dos d10.</li>
+            <li><b>Destrancar (Crime):</b> Adivinhe a sequência oculta (Alto / Baixo / Exato). Tentativas/rodada: d4=1, d6=2, d8=3, d10=4, d12=5.</li>
+            <li><b>Hacking (Tecnologia):</b> Chaves de segurança em camadas (Níveis 1 a 5). A partir da 3ª chave usa Dado de Antihacking. Tentativas/chave: d4=2, d6=4, d8=6, d10=8, d12=10.</li>
+            <li><b>Furtividade:</b> Role Atributo + Furtividade; cada dado vira uma <b>Coordenada</b> individual. Se o vigia rolar o mesmo número na Percepção, você perde aquela Coordenada.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: CONFIRMAR RESET                                                -->
+  <!-- ===================================================================== -->
+  <div id="confirm-reset-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4 no-print">
+    <div class="sheet-container w-full max-w-sm p-4 rounded-sm">
+      <h3 class="font-mono text-base font-black uppercase mb-2">INICIAR NOVA FICHA?</h3>
+      <p class="text-xs mb-4">Isso limpará todos os dados atuais da tela. Exporte o JSON antes caso queira guardar este sobrevivente.</p>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeConfirmReset()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">Cancelar</button>
+        <button onclick="resetCharacter()" class="btn-tactical-solid px-3 py-1.5 text-xs rounded-sm">Limpar Tudo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT APPLICATION LOGIC & COMPLETE RULEBOOK DATABASE             -->
+  <!-- ===================================================================== -->
+  <script>
+    // =========================================================================
+    // 1. DATABASE OFICIAL (DECLÍNIO: RPG - ALFA 0.1)
+    // =========================================================================
+    const DICE_STEPS = ['d4', 'd6', 'd8', 'd10', 'd12'];
+
+    const TIPOS = {
+      robusto: {
+        id: 'robusto',
+        name: 'Robusto',
+        attrBonus: 'corpo',
+        pvBase: 8,
+        pvStep: 3, // +3 nos níveis 4, 8 e 12
+        pcBase: 3,
+        pcStep: 1, // +1 nos níveis 4, 8 e 12
+        skillGrants: { d6: 3, d8: 1, d10: 0 },
+        abilityName: 'Duro na Queda',
+        abilityCost: '1 Estresse (Nv 10: ou 3 PC)',
+        abilityDesc: 'Receba um marcador de estresse e reduza o dano de um golpe sofrido em 1d6.',
+        abilityNv10Desc: 'MELHORIA NV. 10: Seus PV máximos aumentam em +1. Além disso, pode gastar 3 PC ao invés de receber um marcador de estresse e a redução de dano aumenta para 1d10.'
+      },
+      esperto: {
+        id: 'esperto',
+        name: 'Esperto',
+        attrBonus: 'intelecto',
+        pvBase: 4,
+        pvStep: 1,
+        pcBase: 4,
+        pcStep: 2,
+        skillGrants: { d6: 4, d8: 2, d10: 1 },
+        abilityName: 'Clarear Ideias',
+        abilityCost: '1 PC',
+        abilityDesc: 'Gaste 1 PC e adicione +2 ao resultado de um teste de perícia geral ou técnica na qual seja treinado antes de informar o resultado final.',
+        abilityNv10Desc: 'MELHORIA NV. 10: Você aumenta o passo de duas perícias quaisquer à sua escolha, além disso, pode usar Clarear Ideias para qualquer perícia na qual tenha treinamento.'
+      },
+      inspirador: {
+        id: 'inspirador',
+        name: 'Inspirador',
+        attrBonus: 'alma',
+        pvBase: 6,
+        pvStep: 2,
+        pcBase: 5,
+        pcStep: 3,
+        skillGrants: { d6: 2, d8: 2, d10: 0 },
+        abilityName: 'Ânimo',
+        abilityCost: '1x / Dia',
+        abilityDesc: 'Uma vez por dia, conceda um marcador de vontade para até 2 sobreviventes diferentes.',
+        abilityNv10Desc: 'MELHORIA NV. 10: Você pode conceder até 4 marcadores de vontade e distribuí-los como quiser para um máximo de 2 por sobrevivente.'
+      }
+    };
+
+    const ESTILOS = {
+      pratico: {
+        id: 'pratico',
+        name: 'Prático',
+        initiative: 'Age PRIMEIRO na ordem natural da iniciativa (exceto se um Pragmático intervir).',
+        lv1: {
+          name: 'Impulso',
+          cost: '2 PC',
+          desc: 'Gaste 2 PC e receba +1d4 adicional para o teste.'
+        },
+        lv6: {
+          name: 'Surto de Vontade',
+          cost: '1 Vontade + Estresse',
+          desc: 'Após realizar um ataque bem-sucedido, gaste um marcador de Vontade e realize um ataque adicional contra o mesmo alvo. Ao fim da cena, receba marcadores de estresse igual ao número de vezes que usou durante o combate.'
+        }
+      },
+      tatico: {
+        id: 'tatico',
+        name: 'Tático',
+        initiative: 'Age POR ÚLTIMO na ordem natural da iniciativa.',
+        lv1: {
+          name: 'Analisar Probabilidades',
+          cost: '1 PC',
+          desc: 'Gaste 1 PC e mude o resultado de uma de suas rolagens em +1 ou -1.'
+        },
+        lv6: {
+          name: 'Leitura Fria',
+          cost: '1 Estresse ou 5 PC',
+          desc: 'Conceda-se um marcador de Estresse ou gaste 5 PC e mude o resultado de uma de suas rolagens para qualquer outro número possível (não pode gerar crítico nem ser o valor máximo ou mínimo do dado).'
+        }
+      },
+      pragmatico: {
+        id: 'pragmatico',
+        name: 'Pragmático',
+        initiative: 'ESCOLHE quando agir na ordem de iniciativa; pode realizar ações não-ofensivas na Fase de Ataques.',
+        lv1: {
+          name: 'Improviso',
+          cost: '2 PC',
+          desc: 'Gaste 2 PC e faça um personagem rolar novamente qualquer dado lançado, desde que o resultado atual não seja 1.'
+        },
+        lv6: {
+          name: 'Abertura de Ataque',
+          cost: 'Reação',
+          desc: 'Após um inimigo adjacente a você realizar um ataque contra outro alvo, realize um ataque de oportunidade contra ele gastando sua reação. Em caso de acerto, utilize a Rolagem Alta (RA) para calcular o dano.'
+        }
+      }
+    };
+
+    const ARQUETIPOS = {
+      artista_marcial: {
+        id: 'artista_marcial',
+        name: 'Artista Marcial',
+        skills: { briga: 'd8', reflexos: 'd6' },
+        abilities: [
+          { id: 'postura_luta', name: 'Postura de Luta', cost: '3 PC', desc: 'Gaste 3 PC; sua Guarda aumenta em +2 até o fim da cena.' },
+          { id: 'tatica_ringue', name: 'Tática de Ringue', cost: 'Passiva', desc: 'Receba +1 em testes de acerto e dano em ataques desarmados.' },
+          { id: 'step', name: 'Step', cost: 'Passiva', desc: 'Após realizar um ataque bem-sucedido com arma corpo a corpo ou desarmado, pode deslocar-se até metade do seu deslocamento sem sofrer ataques de oportunidade.' },
+          { id: 'derrubada', name: 'Derrubada', cost: 'Reação', desc: 'Alvo de ataque corpo a corpo: use sua reação para rolar Briga contra o atacante. Se vencer, ambos ficam Caídos e você não sofre o dano (alvos até tamanho Grande).' }
+        ]
+      },
+      acrobata: {
+        id: 'acrobata',
+        name: 'Acrobata',
+        skills: { atletismo: 'd8', reflexos: 'd6' },
+        abilities: [
+          { id: 'passos_largos', name: 'Passos Largos', cost: 'Passiva', desc: 'Seu deslocamento base aumenta de 9m para 12m.' },
+          { id: 'esquiva_explosiva', name: 'Esquiva Explosiva', cost: 'Passiva', desc: 'Ao utilizar a reação Esquiva e ser bem-sucedido, pode deslocar-se até 3m sem sofrer ataques de oportunidade.' },
+          { id: 'tecnica_amortecimento', name: 'Técnica de Amortecimento', cost: '4 PC', desc: 'Ao sofrer dano contundente de fontes naturais (queda, destroços), gaste 4 PC para reduzir o dano pela metade. Se ainda sofrer mais de 5 de dano, recebe 1 Estresse.' },
+          { id: 'ataque_acrobatico', name: 'Ataque Acrobático', cost: '1 Vontade', desc: 'Gastando 1 Marcador de Vontade, realize um ataque desarmado usando Reflexos ou Atletismo no lugar de Briga e use o dado da perícia para o dano.' }
+        ]
+      },
+      ator: {
+        id: 'ator',
+        name: 'Ator',
+        skills: { performance: 'd8', enganacao: 'd6' },
+        abilities: [
+          { id: 'roteiro_improvisado', name: 'Roteiro Improvisado', cost: '2 PC', desc: 'Ao falhar em um teste de perícia social, gaste 2 PC para refazer o teste (uma vez por tentativa).' },
+          { id: 'teatrinho', name: 'Teatrinho', cost: '2 PC', desc: 'Ao realizar um teste de Enganação, gaste 2 PC para reduzir em -1 passo o dado de Resiliência do alvo afetado.' },
+          { id: 'mascara_social', name: 'Máscara Social', cost: '3 PC', desc: 'Gastando 3 PC, ignore penalidades temporárias de Estresse em testes sociais até o fim da cena.' },
+          { id: 'cativar', name: 'Cativar', cost: '1 Vontade', desc: 'Gaste 1 Marcador de Vontade para aumentar sua relação com outro personagem em um estágio.' }
+        ]
+      },
+      bombeiro: {
+        id: 'bombeiro',
+        name: 'Bombeiro',
+        skills: { medicina: 'd8', resiliencia: 'd6' },
+        abilities: [
+          { id: 'arrombamento_proficiente', name: 'Arrombamento Proficiente', cost: 'Passiva', desc: 'Uma vez por tranca, sua primeira tentativa de arrombamento não tem custo/redução de 1 PV.' },
+          { id: 'carregamento_feridos', name: 'Carregamento de Feridos', cost: 'Passiva', desc: 'Você não sofre redução de deslocamento por carregar outro sobrevivente.' },
+          { id: 'treinamento_incendio', name: 'Treinamento de Incêndio', cost: '2 PC', desc: 'Gaste 2 PC para não sofrer redução de visibilidade na fumaça, além de aguentar +2 rodadas adicionais asfixiado.' },
+          { id: 'apagar_foco', name: 'Apagar Foco', cost: '3 PC (1x/cena)', desc: 'Uma vez por cena, quando você ou um aliado receberiam um Marcador de Estresse, gaste 3 PC para anular o marcador.' }
+        ]
+      },
+      cacador: {
+        id: 'cacador',
+        name: 'Caçador',
+        skills: { sobrevivencia: 'd8', armas_fogo: 'd6' },
+        abilities: [
+          { id: 'dia_cacador', name: 'Dia do Caçador', cost: '2 PC', desc: 'No início de um combate, gaste 2 PC e escolha um alvo visível como presa. Seus ataques contra ela causam +1 de dano até ser eliminada.' },
+          { id: 'dia_caca', name: 'Dia da Caça', cost: '1 PC', desc: 'Gaste 1 PC para rolar um dado adicional de Furtividade na primeira rodada de cenas de furtividade.' },
+          { id: 'armadilha_urso', name: 'Armadilha de Urso', cost: '3 PC', desc: 'Prepara armadilha improvisada (1 quadrado). Criatura que pisar faz CORPO + Atletismo DT 8 ou sofre 1d6 de dano e deslocamento 0 (Crime para destrancar).' },
+          { id: 'cacador_eficiente', name: 'Caçador Eficiente', cost: '1 Estresse', desc: 'Após acertar um ataque à distância, conceda-se 1 Marcador de Estresse para rolar novamente sua RB (Rolagem Baixa).' }
+        ]
+      },
+      charlatao: {
+        id: 'charlatao',
+        name: 'Charlatão',
+        skills: { empatia: 'd8', persuasao: 'd6' },
+        abilities: [
+          { id: 'leitura_mental', name: 'Leitura Mental', cost: '1 PC', desc: 'Gaste 1 PC em um teste de Empatia; se passar, descobre a maior necessidade, medo ou mentira do alvo e ganha +1 passo no próximo teste social contra ele.' },
+          { id: 'falsas_esperancas', name: 'Falsas Esperanças', cost: '6 PC', desc: 'Gaste 6 PC para conceder-se 1 Marcador de Vontade. Ao utilizar esse marcador, você recebe 1 Marcador de Estresse.' },
+          { id: 'blefe_desesperado', name: 'Blefe Desesperado', cost: '3 PC', desc: 'Gaste 3 PC e role Persuasão vs. Resiliência de um inimigo humano; se vencer, ele hesita e perde sua próxima ação (1x por alvo/cena).' },
+          { id: 'videncia', name: 'Vidência', cost: '3 PC', desc: 'Gaste 3 PC e realize um palpite sobre algo que acontecerá na cena. Se estiver correto, recebe 1 Marcador de Vontade.' }
+        ]
+      },
+      cientista: {
+        id: 'cientista',
+        name: 'Cientista',
+        skills: { quimica: 'd8', biologia: 'd6' },
+        abilities: [
+          { id: 'sintese_improvisada', name: 'Síntese Improvisada', cost: '3 PC (Desc. Seguro)', desc: 'Durante um Descanso Seguro (com materiais), fabrica molotov, bomba de fumaça, ácido, antídoto básico ou injeção de adrenalina sem testes.' },
+          { id: 'analise_propriedades', name: 'Análise de Propriedades', cost: '2 PC', desc: 'Gastando 2 PC, analisa um material e descobre uma propriedade específica (como efeito curativo de ervas).' },
+          { id: 'soro_experimental', name: 'Soro Experimental', cost: '4 PC (Desc. Seguro)', desc: 'Fabrica um soro que concede +1 passo em um atributo definido até o fim da próxima cena, mas causa 2 Marcadores de Estresse ao final.' },
+          { id: 'catalisador', name: 'Catalisador', cost: '2 PC', desc: 'Quando você ou aliado adjacente usar consumível medicinal ou químico, gaste 2 PC para adicionar +1d4 ao efeito de cura ou dano.' }
+        ]
+      },
+      criminoso: {
+        id: 'criminoso',
+        name: 'Criminoso',
+        skills: { crime: 'd8', furtividade: 'd6' },
+        abilities: [
+          { id: 'mestre_chaveiro', name: 'Mestre Chaveiro', cost: '4 PC (1x/Dia)', desc: 'Uma vez por dia, gaste 4 PC e desbloqueie um dos dados de uma fechadura qualquer sem gastar tentativas.' },
+          { id: 'golpe_sujo', name: 'Golpe Sujo', cost: 'Passiva', desc: 'Ao acertar um ataque contra alvo que ainda não agiu na 1ª rodada ou que não possa vê-lo, use a RA (Rolagem Alta) para calcular o dano.' },
+          { id: 'ouvido_absoluto', name: 'Ouvido Absoluto', cost: 'Passiva', desc: 'Ao destrancar fechaduras, além de Certo/Baixo/Alto, recebe a dica "Certo na posição errada".' },
+          { id: 'mao_leve', name: 'Mão Leve', cost: '1 Vontade / Passiva', desc: 'Gaste 1 Vontade para rolar Furtividade e furtar/plantar item em alvo adjacente. Permite desarmar bombas usando Crime ao invés de Explosivos.' }
+        ]
+      },
+      fanatico: {
+        id: 'fanatico',
+        name: 'Fanático',
+        skills: { resiliencia: 'd8', sobrevivencia: 'd6' },
+        abilities: [
+          { id: 'eu_ja_sabia', name: 'Eu já Sabia!', cost: 'Passiva', desc: 'Ao rolar testes junto de um Dado de Medo, você vence o Medo com resultados 1 ou 2 (ao invés de apenas 1).' },
+          { id: 'paranoia', name: 'Paranoia', cost: '1 Estresse', desc: 'Após falhar em um teste de Resiliência, conceda-se 1 Marcador de Estresse e adicione +1d6 ao resultado final.' },
+          { id: 'alimentado_caos', name: 'Alimentado Pelo Caos', cost: 'Passiva', desc: 'Sempre que receber um Marcador de Estresse, recupere 2 PC.' },
+          { id: 'sacrificio_necessario', name: 'Sacrifício Necessário', cost: '1d4 Dano em si', desc: 'Em um ataque ou teste de CORPO decisivo, sofra 1d4 de dano (ignora reduções) para receber +1 passo no dado da perícia utilizada.' }
+        ]
+      },
+      faz_tudo: {
+        id: 'faz_tudo',
+        name: 'Faz-Tudo',
+        skills: { mecanica: 'd8', engenharia: 'd6' },
+        abilities: [
+          { id: 'gambiarra', name: 'Gambiarra', cost: '2 PC', desc: 'Gaste 2 PC para ignorar a condição Quebrado ou defeitos de arma, ferramenta ou veículo até o fim da cena (quebra definitivamente depois).' },
+          { id: 'graveto_toda_obra', name: 'Graveto Pra Toda Obra', cost: '2 PC', desc: 'Ao realizar um teste de perícia não treinada (d4), gaste 2 PC para rolá-la como se tivesse treinamento em d6.' },
+          { id: 'manutencao_preventiva', name: 'Manutenção Preventiva', cost: '1 Vontade (Desc. Seguro)', desc: 'Revisa até 3 armas ou equipamentos do grupo durante Descanso Seguro; ignoram a primeira falha crítica ou travamento.' },
+          { id: 'kit_qualquer_coisa', name: 'Kit de... Qualquer coisa', cost: '1 Estresse (1x/Dia)', desc: 'Uma vez por dia, concedendo-se 1 Marcador de Estresse, aumenta em +1 passo uma perícia treinada até o próximo Descanso Seguro.' }
+        ]
+      },
+      paramedico: {
+        id: 'paramedico',
+        name: 'Paramédico',
+        skills: { medicina: 'd8', reflexos: 'd6' },
+        abilities: [
+          { id: 'dissecacao_tecnica', name: 'Dissecação Técnica', cost: '3 PC', desc: 'Gaste 3 PC para substituir a perícia de um ataque por Biologia ou Medicina; se acertar, usa a RA para calcular o dano.' },
+          { id: 'injecao_adrenalina_arq', name: 'Injeção de Adrenalina', cost: '1x / Dia', desc: 'Sempre carrega uma adrenalina. 1x/dia aplica em um personagem (não com 0 PV), curando 4 PV e removendo Exausto, Inconsciente ou Paralisado.' },
+          { id: 'kit_medico_eficiente', name: 'Kit Médico Eficiente', cost: 'Passiva', desc: 'A primeira vez que utilizar um Kit de Primeiros Socorros não consome um dos usos.' },
+          { id: 'primeiros_socorros_aprimorados', name: 'Primeiros Socorros Aprimorados', cost: 'Passiva', desc: 'Ao aplicar primeiros socorros em alguém e ser bem-sucedido, recupera +2 PV adicionais do alvo.' }
+        ]
+      },
+      perseverante: {
+        id: 'perseverante',
+        name: 'Perseverante',
+        skills: { resiliencia: 'd8', armas_brancas: 'd6' },
+        abilities: [
+          { id: 'duro_de_matar', name: 'Duro de Matar', cost: '5 PC + 2 Estresse', desc: 'Quando algo reduzir seus PV a 0, gaste 5 PC e receba 2 Marcadores de Estresse para permanecer com 1 PV (cai inconsciente).' },
+          { id: 'segurar_pontas', name: 'Segurar as Pontas', cost: '2 PC', desc: 'Gaste 2 PC para absorver 1 Marcador de Estresse que um aliado adjacente receberia, transferindo-o para si mesmo.' },
+          { id: 'folego_extra', name: 'Fôlego Extra', cost: '1 Vontade', desc: 'Gaste 1 Marcador de Vontade para ignorar as penalidades de Exaustão durante uma cena.' },
+          { id: 'forca_vontade', name: 'Força de Vontade', cost: 'Passiva / 3 PC', desc: 'Seus PV e PC máximos aumentam em +2 (e +2 no nível seguinte). Também pode gastar 3 PC para ganhar 4 PP contra dano físico até o fim da cena.' }
+        ]
+      },
+      piloto: {
+        id: 'piloto',
+        name: 'Piloto',
+        skills: { pilotagem: 'd8', mecanica: 'd6' },
+        abilities: [
+          { id: 'rota_otimizada', name: 'Rota Otimizada', cost: '1 Estresse (1x/cena)', desc: 'Conceda-se 1 Marcador de Estresse para andar até metade do deslocamento de um veículo mesmo sem combustível suficiente.' },
+          { id: 'piloto_fuga', name: 'Piloto de Fuga', cost: '1 Vontade', desc: 'Ao iniciar retirada ou perseguição, gaste 1 Vontade para que você e aliados adjacentes/no veículo saiam sem sofrer ataques de oportunidade.' },
+          { id: 'aterrissagem_forcada', name: 'Aterrissagem Forçada', cost: '5 PC', desc: 'Quando veículo conduzido por você colidir ou capotar, gaste 5 PC para reduzir pela metade o dano sofrido por você e todos os passageiros.' },
+          { id: 'reflexos_corrida', name: 'Reflexos de Corrida', cost: '3 PC', desc: 'Ao realizar a reação Esquiva, pode gastar 3 PC para receber +1d6 no teste.' }
+        ]
+      },
+      policial: {
+        id: 'policial',
+        name: 'Policial',
+        skills: { armas_fogo: 'd8', intimidacao: 'd6' },
+        abilities: [
+          { id: 'voz_comando', name: 'Voz de Comando', cost: '2 PC', desc: 'Gaste 2 PC e faça teste de Intimidação vs. Resiliência de alvo humano; se vencer, ele hesita, solta o que segura ou recua metade do deslocamento.' },
+          { id: 'protocolo_contencao', name: 'Protocolo de Contenção', cost: '3 PC', desc: 'Ao acertar ataque corpo a corpo (arma branca/desarmado) ou agarrão, gaste 3 PC para deixar o alvo Agarrado ou Caído automaticamente.' },
+          { id: 'tiro_supressao', name: 'Tiro de Supressão', cost: '2 PC', desc: 'Ao disparar arma de fogo, gaste 2 PC para forçar o alvo (e adjacentes) a buscar cobertura, impondo -1 passo no próximo ataque deles.' },
+          { id: 'olho_treinado', name: 'Olho Treinado', cost: '1 Estresse', desc: 'Conceda-se 1 Marcador de Estresse para receber +1 passo em Investigação e Percepção até o próximo Descanso Alerta.' }
+        ]
+      },
+      politico: {
+        id: 'politico',
+        name: 'Político',
+        skills: { enganacao: 'd8', persuasao: 'd6' },
+        abilities: [
+          { id: 'promessas_falsas', name: 'Promessas Falsas', cost: '5 PC (1x/cena)', desc: 'Uma vez por cena, gaste 5 PC para remover 1 Marcador de Estresse de um aliado.' },
+          { id: 'plano_desenvolvimento', name: 'Plano de Desenvolvimento', cost: '1 Vontade', desc: 'Gaste 1 Marcador de Vontade para reduzir os custos de uma melhoria de assentamento pela metade.' },
+          { id: 'aplauso_plateia', name: 'Aplauso da Plateia', cost: 'Passiva (1x/cena)', desc: 'Ao passar em teste de Persuasão ou Performance diante de 3+ pessoas, recupera 2 PC.' },
+          { id: 'pao_e_circo', name: 'Pão e Circo', cost: '2 PC', desc: 'Após ajudar uma comunidade ou sobrevivente, gaste 2 PC para negociar recompensa extra, suprimentos ou abrigo sem testes.' }
+        ]
+      },
+      professor: {
+        id: 'professor',
+        name: 'Professor',
+        skills: { investigacao: 'd8', empatia: 'd6' },
+        abilities: [
+          { id: 'aula_pratica', name: 'Aula Prática', cost: '3 PC (Desc. Seguro)', desc: 'Instrui um aliado em uma perícia treinada por você; até o próximo descanso, ele rola em d6 ou recebe +1 se já treinada.' },
+          { id: 'conhecimento_enciclopedico', name: 'Conhecimento Enciclopédico', cost: '2 PC (1x/cena)', desc: 'Gaste 2 PC diante de objeto antigo, símbolo, doença, estrutura ou enigma para fazer 1 pergunta direta ao mestre sem rolar dados.' },
+          { id: 'raciocinio_dedutivo', name: 'Raciocínio Dedutivo', cost: '1 Vontade', desc: 'Gaste 1 Marcador de Vontade para substituir qualquer teste de Percepção, Sobrevivência ou Persuasão por Investigação.' },
+          { id: 'pausa_cafe', name: 'Pausa pro Café', cost: '1x / Dia', desc: 'Recebe +1 passo em CORPO até o fim da cena. Ao fim da cena, role 1d10 na tabela de Efeito de Estresse Temporário.' }
+        ]
+      },
+      religioso: {
+        id: 'religioso',
+        name: 'Religioso',
+        skills: { empatia: 'd8', resiliencia: 'd6' },
+        abilities: [
+          { id: 'palavras_conforto', name: 'Palavras de Conforto', cost: '3 PC (Desc. Alerta)', desc: 'Durante Descanso Alerta, gaste 3 PC para orar/conversar com até 2 aliados, removendo 1 Marcador de Estresse de cada.' },
+          { id: 'nao_perder_fe', name: 'Não Perder a Fé', cost: 'Reação + 2 Estresse', desc: 'Quando aliado adjacente cair a 0 PV ou sofrer ferimento crítico, receba 2 Estresse para estabilizá-lo e impedir ganho de Estresse pela queda (1x por Desc. Seguro).' },
+          { id: 'confissao', name: 'Confissão', cost: 'Descanso Alerta', desc: 'Um aliado transfere 1 Marcador de Estresse dele para você; ambos recebem 1 Marcador de Vontade temporário até o próximo descanso.' },
+          { id: 'palavra_esperanca', name: 'Palavra de Esperança', cost: '4 PC', desc: 'Gaste 4 PC para aumentar em +1 passo a Resiliência no próximo teste de até 3 aliados que possam ouvi-lo.' }
+        ]
+      },
+      soldado: {
+        id: 'soldado',
+        name: 'Soldado',
+        skills: { armas_fogo: 'd8', atletismo: 'd6' },
+        abilities: [
+          { id: 'si_vis_pacem', name: 'Si vis pacem...', cost: '2 PC', desc: 'Ao atacar com arma de fogo, gaste 2 PC para conceder +2 na Guarda contra ataques à distância a até 2 aliados visíveis até seu próximo turno.' },
+          { id: 'para_bellum', name: '...para bellum', cost: 'Passiva', desc: 'Recebe +1 de dano com armas de fogo que utilizem Munição Pesada (fuzis, rifles de precisão, espingardas).' },
+          { id: 'atirador_trincheira', name: 'Atirador de Trincheira', cost: '2 PC', desc: 'Sob cobertura parcial, gaste 2 PC para aumentar sua Guarda em +3 (ao invés de +2) até o início do seu próximo turno.' },
+          { id: 'ptsd', name: 'PTSD', cost: '2 Estresse (1x/cena)', desc: 'Conceda-se 2 Marcadores de Estresse e realize dois ataques à distância adicionais utilizando armas de fogo leves.' }
+        ]
+      },
+      tecnico_informatica: {
+        id: 'tecnico_informatica',
+        name: 'Técnico em Informática',
+        skills: { tecnologia: 'd8', investigacao: 'd6' },
+        abilities: [
+          { id: 'firewall_ignorado', name: 'Firewall Ignorado', cost: '1 Estresse', desc: 'Durante hacking, conceda-se 1 Marcador de Estresse para descobrir o número sorteado pelo Antihacking da senha atual.' },
+          { id: 'otimizacao_senha', name: 'Otimização de Senha', cost: '4 PC (1x/Dia)', desc: 'Uma vez por dia, gaste 4 PC para desbloquear automaticamente um dos dados de uma senha de hacking sem gastar tentativas.' },
+          { id: 'curto_circuito', name: 'Curto-Circuito', cost: '2 PC', desc: 'Gaste 2 PC e role Tecnologia para desativar um eletrônico ou causar descarga de 1d8 de dano em alvo a até 3m (quebra o aparelho).' },
+          { id: 'hacking_eficiente', name: 'Hacking Eficiente', cost: '1 Vontade ou 1 Estresse', desc: '1x/dia, se um sistema travar por tentativas esgotadas, tente novamente reduzindo -1 passo em Tecnologia nessa tentativa.' }
+        ]
+      },
+      trabalhador_rural: {
+        id: 'trabalhador_rural',
+        name: 'Trabalhador Rural',
+        skills: { agricultura: 'd8', lidar_animais: 'd6' },
+        abilities: [
+          { id: 'instinto_campo', name: 'Instinto de Campo', cost: '3 PC', desc: 'Gaste 3 PC para prever clima próximo, achar água potável ou acalmar/conduzir animais domesticados sem rolar dados.' },
+          { id: 'cultivo_colheita', name: 'Cultivo e Colheita', cost: '3 PC (Desc. Seguro)', desc: 'Organiza plantio/coleta local durante Descanso Seguro em acampamento, gerando 1d6 rações de comida adicionais.' },
+          { id: 'ferramenta_trabalho', name: 'Ferramenta de Trabalho', cost: 'Passiva', desc: 'Recebe +1 em testes de acerto e dano ao utilizar armas brancas improvisadas ou ferramentas agrícolas pesadas.' },
+          { id: 'cansaco_laboral', name: 'Cansaço Laboral', cost: '2 Estresse', desc: 'Receba 2 Marcadores de Estresse para ganhar +1 passo em qualquer atributo ou perícia (máx d12) até o fim da cena.' }
+        ]
+      }
+    };
+
+    const GENERAL_ABILITIES = [
+      { id: 'aumento_pericia', name: 'Aumento de Passo em Perícia', repeatable: true, prereqText: 'Repetível', desc: 'Aumente o passo de dados de até duas perícias em +1, ou uma perícia em +2 passos (até o máximo de d12).' },
+      { id: 'aumento_atributo', name: 'Aumento de Passo em Atributo', maxCount: 2, prereqText: 'Máx. 2 vezes', desc: 'Aumente o passo de dado de um atributo em +1 passo (até o máximo de d12).' },
+      { id: 'pes_leves', name: 'Pés Leves', prereqSkill: { id: 'furtividade', min: 'd6' }, prereqText: 'Furtividade d6+', desc: 'Durante cena de furtividade, gaste 1 PC para rolar +1d4 adicional no teste.' },
+      { id: 'mente_blindada', name: 'Mente Blindada', prereqSkill: { id: 'resiliencia', min: 'd6' }, prereqText: 'Resiliência d6+', desc: 'Uma vez por cena, ao falhar em teste de Resiliência contra medo ou intimidação, gaste 2 PC para refazer o teste.' },
+      { id: 'mochileiro', name: 'Mochileiro', prereqText: 'Nenhum', desc: 'Sua capacidade máxima de carga aumenta em +4 slots fixos (totalizando 24 slots base).' },
+      { id: 'recuperacao_rapida', name: 'Recuperação Rápida', prereqText: 'Nenhum', desc: 'Durante qualquer Descanso Alerta ou Descanso Seguro, você recupera +2 PV e +2 PC adicionais.' },
+      { id: 'metabolismo_bruto', name: 'Metabolismo Bruto', prereqText: 'Nenhum', desc: 'Por 5 PC, ignora penalidades de uma situação extrema (Fome, Sede, Frio ou Calor extremo) até o fim da condição.' },
+      { id: 'saque_veloz', name: 'Saque Veloz', prereqText: 'Nenhum', desc: 'Pode sacar, guardar ou trocar uma arma ou item do inventário gastando 2 PC mesmo após concluir a Fase de Preparação.' },
+      { id: 'mira_firme', name: 'Mira Firme', prereqSkill: { id: 'armas_fogo', min: 'd8' }, prereqText: 'Armas de Fogo d8+', desc: 'Ignora penalidades de curta distância em armas de alcance médio/longo e gasta 2 PC para ignorar cobertura parcial.' },
+      { id: 'golpe_pesado', name: 'Golpe Pesado', prereqText: 'Nenhum', desc: 'Ao realizar ataque corpo a corpo com arma branca ou desarmado, gaste 2 PC para adicionar +1d4 ao dano.' },
+      { id: 'combate_duas_maos', name: 'Combate com Duas Mãos', prereqAnySkill: [{ id: 'armas_brancas', min: 'd6' }, { id: 'briga', min: 'd6' }], prereqText: 'Armas Brancas ou Briga d6+', desc: 'Empunhando duas armas leves ou desarmado, gaste 3 PC para ataque adicional com a outra mão (causa metade do dano, mín. 1).' },
+      { id: 'casca_grossa', name: 'Casca-Grossa', prereqLevel: 5, prereqText: 'Nível 5+', desc: 'Seus PV máximos aumentam em +3 permanentemente e você recebe +1 em testes de CORPO contra empurrões, quedas e agarrões.' }
+    ];
+
+    const SKILLS_DATA = [
+      // TÉCNICAS (8)
+      { id: 'agricultura', name: 'Agricultura', cat: 'TÉCNICAS' },
+      { id: 'biologia', name: 'Biologia', cat: 'TÉCNICAS' },
+      { id: 'crime', name: 'Crime', cat: 'TÉCNICAS', subsystem: 'lockpick' },
+      { id: 'engenharia', name: 'Engenharia', cat: 'TÉCNICAS' },
+      { id: 'mecanica', name: 'Mecânica', cat: 'TÉCNICAS' },
+      { id: 'medicina', name: 'Medicina', cat: 'TÉCNICAS' },
+      { id: 'quimica', name: 'Química', cat: 'TÉCNICAS' },
+      { id: 'tecnologia', name: 'Tecnologia', cat: 'TÉCNICAS', subsystem: 'hacking' },
+      // SOCIAIS (7)
+      { id: 'empatia', name: 'Empatia', cat: 'SOCIAIS' },
+      { id: 'enganacao', name: 'Enganação', cat: 'SOCIAIS' },
+      { id: 'intimidacao', name: 'Intimidação', cat: 'SOCIAIS' },
+      { id: 'lidar_animais', name: 'Lidar com Animais', cat: 'SOCIAIS' },
+      { id: 'performance', name: 'Performance', cat: 'SOCIAIS' },
+      { id: 'persuasao', name: 'Persuasão', cat: 'SOCIAIS' },
+      { id: 'resiliencia', name: 'Resiliência', cat: 'SOCIAIS' },
+      // COMBATE (6)
+      { id: 'armas_brancas', name: 'Armas Brancas', cat: 'COMBATE' },
+      { id: 'armas_fogo', name: 'Armas de Fogo (Disparo)', cat: 'COMBATE' },
+      { id: 'briga', name: 'Briga', cat: 'COMBATE' },
+      { id: 'explosivos', name: 'Explosivos', cat: 'COMBATE' },
+      { id: 'furtividade', name: 'Furtividade', cat: 'COMBATE' },
+      { id: 'reflexos', name: 'Reflexos', cat: 'COMBATE' },
+      // GERAIS (5)
+      { id: 'atletismo', name: 'Atletismo', cat: 'GERAIS', subsystem: 'balance' },
+      { id: 'investigacao', name: 'Investigação', cat: 'GERAIS' },
+      { id: 'percepcao', name: 'Percepção', cat: 'GERAIS' },
+      { id: 'pilotagem', name: 'Pilotagem', cat: 'GERAIS' },
+      { id: 'sobrevivencia', name: 'Sobrevivência', cat: 'GERAIS' }
+    ];
+
+    const CONDITIONS_DATA = [
+      { id: 'agarrado', name: 'Agarrado', speedZero: true, effect: 'Deslocamento = 0. Escape com teste oposto de Briga ou Atletismo.' },
+      { id: 'asfixiado', name: 'Asfixiado', effect: 'Prende o ar por Max(CORPO)/2 rodadas (+2 com Treinamento de Incêndio); depois perde 1d6 PV/rodada.' },
+      { id: 'caido', name: 'Caído', effect: 'Ataques corpo a corpo contra você recebem +2; à distância sofrem -2. Levantar custa metade do deslocamento.' },
+      { id: 'desprevenido', name: 'Desprevenido', guardaMod: -2, effect: 'Guarda -2 contra quem surpreendeu e não pode usar Reações até agir.' },
+      { id: 'exausto', name: 'Exausto', halfSpeed: true, effect: '-1 passo em todos os testes físicos e deslocamento pela metade até Descanso Seguro.' },
+      { id: 'hipotermia', name: 'Hipotermia / Hipertermia', guardaMod: -1, halfSpeed: true, effect: 'Deslocamento pela metade, Guarda -1 e sofre +1 de dano extra de qualquer ataque.' },
+      { id: 'inconsciente', name: 'Inconsciente', speedZero: true, effect: 'Desacordado, Caído, sem ações/reações. Ataques corpo a corpo acertam automaticamente.' },
+      { id: 'morrendo', name: 'Morrendo (0 PV)', speedZero: true, effect: 'Sobrevive por apenas 3 rodadas se não for estabilizado (Medicina DT 12 + Dano Excedente).' },
+      { id: 'paralisado', name: 'Paralisado', guardaMod: -2, speedZero: true, effect: 'Incapaz de mover ou falar, sem ações/reações e sofre -2 na Guarda.' },
+      { id: 'fome', name: 'Fome (24h+)', halfSpeed: true, effect: 'Impõe Exausto, -1 passo em CORPO, deslocamento metade e -1 fixo em testes físicos.' },
+      { id: 'sede', name: 'Sede (24h+)', halfSpeed: true, effect: '-1 passo em INTELECTO, deslocamento metade e -1 fixo em testes de INTELECTO e perícias mentais.' }
+    ];
+
+    // CATÁLOGO OFICIAL COMPLETO DE EQUIPAMENTOS
+    const CATALOG_ITEMS = [
+      // ARMAS BRANCAS (13)
+      { id: 'soco_ingles', cat: 'melee', name: 'Soco Inglês', damage: 'RB + 1', slots: 1, range: 'Corpo a Corpo', weightClass: 'light', props: ['Leve', 'Contundente', 'Usa Briga'], desc: 'Utiliza a perícia Briga ao invés de Armas Brancas. Pode ser empunhado com outra arma leve.' },
+      { id: 'faca', cat: 'melee', name: 'Faca', damage: 'RB + 2', slots: 1, range: 'Corpo a Corpo', weightClass: 'light', props: ['Leve', 'Cortante/Perfurante', 'Arremesso (Curto)'], desc: 'Lâmina tática ou de caça. Fácil de ocultar e arremessável a alcance curto.' },
+      { id: 'martelo', cat: 'melee', name: 'Martelo', damage: 'RB + 2', slots: 1, range: 'Corpo a Corpo', weightClass: 'light', props: ['Leve', 'Contundente', 'Ferramenta'], desc: 'Útil para reparos e barricadas; impacto concentrado quebra ossos e fechaduras frágeis.' },
+      { id: 'machadinha', cat: 'melee', name: 'Machadinha', damage: 'RB + 2', slots: 1, range: 'Corpo a Corpo', weightClass: 'light', props: ['Leve', 'Cortante', 'Arremesso (Curto)', 'Ferramenta'], desc: 'Compacta e versátil para cortar lenha, combate próximo ou arremesso.' },
+      { id: 'bastao', cat: 'melee', name: 'Bastão', damage: 'RB + 2', slots: 1, range: 'Corpo a Corpo', weightClass: 'normal', props: ['Contundente'], desc: 'Cassetete policial, taco de beisebol ou cano de ferro reforçado.' },
+      { id: 'facao', cat: 'melee', name: 'Facão', damage: 'RB + 3', slots: 1, range: 'Corpo a Corpo', weightClass: 'normal', props: ['Cortante', 'Ferramenta'], desc: 'Lâmina longa e resistente muito confiável contra infectados.' },
+      { id: 'foice', cat: 'melee', name: 'Foice', damage: 'RB + 3', slots: 1, range: 'Corpo a Corpo', weightClass: 'normal', props: ['Cortante', 'Ferramenta'], desc: 'Ferramenta agrícola de lâmina curva capaz de enganchar e dilacerar alvos.' },
+      { id: 'lanca', cat: 'melee', name: 'Lança', damage: 'RB + 3', slots: 2, range: 'Estendido (3m / 2 quad.)', weightClass: 'normal', props: ['Perfurante', 'Alcance Estendido', 'Arremesso (Curto)'], desc: 'Permite atacar a 2 quadrados de distância mantendo ameaças afastadas.' },
+      { id: 'enxada', cat: 'melee', name: 'Enxada', damage: 'RB + 3', slots: 2, range: 'Corpo a Corpo', weightClass: 'heavy', props: ['Pesada', 'Contundente/Cortante', 'Ferramenta'], desc: 'Exige duas mãos para manejo eficaz (-1 passo se usada com uma mão).' },
+      { id: 'pa', cat: 'melee', name: 'Pá', damage: 'RB + 3', slots: 2, range: 'Corpo a Corpo', weightClass: 'heavy', props: ['Pesada', 'Contundente', 'Ferramenta'], desc: 'Pá militar dobrável ou pá de obra. Exige duas mãos.' },
+      { id: 'espada', cat: 'melee', name: 'Espada', damage: 'RB + 4', slots: 2, range: 'Corpo a Corpo', weightClass: 'normal', props: ['Cortante', 'Aparar'], desc: 'Permite gastar sua Reação para aparar um golpe corpo a corpo, recebendo +1 na Guarda contra aquele ataque.' },
+      { id: 'machado', cat: 'melee', name: 'Machado', damage: 'RB + 4', slots: 2, range: 'Corpo a Corpo', weightClass: 'heavy', props: ['Pesada', 'Cortante', 'Ferramenta'], desc: 'Exige duas mãos. Concede +1 em testes de Atletismo para arrombar portas e barricadas.' },
+      { id: 'serra_eletrica', cat: 'melee', name: 'Serra Elétrica', damage: 'RB + 6', slots: 3, range: 'Corpo a Corpo', weightClass: 'heavy', isChainsaw: true, props: ['Pesada', 'Cortante', 'Barulhenta', 'Combustível', 'Defeito'], desc: 'Consome 1 unidade de combustível por cena de combate. Rugido atrai ameaças num raio de centenas de metros.' },
+
+      // ARMAS À DISTÂNCIA (11)
+      { id: 'estilingue', cat: 'ranged', name: 'Estilingue', damage: 'RB + 1', slots: 1, range: 'Curto (9m)', cap: 1, ammoType: 'pedras', weightClass: 'light', reliable: true, props: ['Leve', 'Silenciosa'], desc: 'Dispara pedras ou esferas metálicas sem fazer barulho.' },
+      { id: 'besta_leve', cat: 'ranged', name: 'Besta Leve', damage: 'RB + 2', slots: 1, range: 'Curto (9m)', cap: 1, ammoType: 'flechas', weightClass: 'light', props: ['Leve', 'Silenciosa', 'Recarga (Ação Pequena)', 'Defeito'], desc: 'Operada com uma mão; recarregada na Fase de Preparação com Ação Pequena.' },
+      { id: 'arco', cat: 'ranged', name: 'Arco', damage: 'RB + 3', slots: 2, range: 'Médio (24m)', cap: 1, ammoType: 'flechas', weightClass: 'heavy', props: ['Pesada', 'Silenciosa', 'Recupera Flechas'], desc: 'Exige duas mãos. Permite recuperar metade das flechas disparadas após o combate.' },
+      { id: 'pistola', cat: 'ranged', name: 'Pistola', damage: 'RB + 3', slots: 1, range: 'Curto (9m)', cap: 12, ammoType: 'municao_leve', weightClass: 'light', props: ['Leve', 'Semiautomática', 'Defeito'], desc: 'Pistola semiautomática comum (9mm ou .40). Fácil de sacar.' },
+      { id: 'revolver', cat: 'ranged', name: 'Revólver', damage: 'RB + 4', slots: 1, range: 'Curto (9m)', cap: 6, ammoType: 'municao_leve', weightClass: 'light', reliable: true, props: ['Leve', 'Confiável (Nunca trava)'], desc: 'Arma de tambor (.38). Nunca trava em caso de Falha Crítica.' },
+      { id: 'arco_composto', cat: 'ranged', name: 'Arco Composto', damage: 'RB + 4', slots: 2, range: 'Médio (24m)', cap: 1, ammoType: 'flechas', weightClass: 'heavy', reqCorpo: 'd8', props: ['Pesada', 'Silenciosa', 'Exige CORPO d8+', 'Recupera Flechas'], desc: 'Alta tensão; exige CORPO d8 ou superior para ser puxado corretamente.' },
+      { id: 'besta_pesada', cat: 'ranged', name: 'Besta Pesada', damage: 'RB + 4', slots: 2, range: 'Médio (24m)', cap: 1, ammoType: 'flechas', weightClass: 'heavy', props: ['Pesada', 'Silenciosa', 'Recarga (Ação Principal)', 'Defeito'], desc: 'Perfura proteções leves em silêncio. Exige Ação Principal na Preparação para recarregar.' },
+      { id: 'submetralhadora', cat: 'ranged', name: 'Submetralhadora', damage: 'RB + 4', slots: 2, range: 'Curto (9m)', cap: 20, ammoType: 'municao_leve', weightClass: 'normal', hasBurst: true, props: ['Rajada (4 munições -> RA)', 'Defeito'], desc: 'Ao disparar, pode optar por Rajada gastando 4 munições de uma vez para usar a RA no dano.' },
+      { id: 'espingarda', cat: 'ranged', name: 'Espingarda', damage: 'RB + 5', slots: 2, range: 'Curto (9m)', cap: 6, ammoType: 'municao_pesada', weightClass: 'heavy', props: ['Pesada', 'Munição Pesada', 'Queima-Roupa (+1 dano <= 3m)', 'Defeito'], desc: 'Escopeta calibre 12. Causa +1 de dano adicional se o alvo estiver a até 3m (2 quadrados).' },
+      { id: 'fuzil', cat: 'ranged', name: 'Fuzil', damage: 'RB + 5', slots: 3, range: 'Médio (24m)', cap: 20, ammoType: 'municao_pesada', weightClass: 'heavy', props: ['Pesada', 'Munição Pesada', 'Defeito'], desc: 'Rifle militar de assalto de alto calibre.' },
+      { id: 'rifle_precisao', cat: 'ranged', name: 'Rifle de Precisão', damage: 'RB + 6', slots: 3, range: 'Longo (60m)', cap: 5, ammoType: 'municao_pesada', weightClass: 'heavy', props: ['Pesada', 'Munição Pesada', 'Mira Telescópica', 'Defeito'], desc: 'Armado com luneta óptica para abates a longa distância.' },
+
+      // EXPLOSIVOS (4)
+      { id: 'molotov', cat: 'explosives', name: 'Coquetel Molotov', damage: '1d6 fogo/rodada', slots: 1, range: 'Curto (9m)', stackable: false, isExplosive: true, props: ['Arremesso', 'Área (3m / 2 quad.)'], desc: 'Queima uma área de 3m por 3 rodadas, causando 1d6 de dano de fogo/rodada.' },
+      { id: 'granada', cat: 'explosives', name: 'Granada de Fragmentação', damage: '2d6 + 4', slots: 1, range: 'Curto (9m)', stackable: false, isExplosive: true, props: ['Arremesso', 'Área (4,5m / 3 quad.)'], desc: 'Estilhaços em raio de 4,5m (CORPO + Reflexos DT 12 reduz dano pela metade).' },
+      { id: 'mina_proximidade', cat: 'explosives', name: 'Mina de Proximidade', damage: '2d6 + 4', slots: 1, range: 'Instalação', stackable: false, isExplosive: true, props: ['Armadilha', 'Área (3m / 2 quad.)'], desc: 'Exige armar com Explosivos. Detona automaticamente quando alguém entra no espaço.' },
+      { id: 'explosivo_remoto', cat: 'explosives', name: 'Explosivo Remoto', damage: '3d6 + 6', slots: 2, range: 'Instalação', stackable: false, isExplosive: true, props: ['Detonação Remota', 'Área (6m / 4 quad.)', 'Demolição'], desc: 'Carga plástica/dinamite com detonador. Derruba paredes, portões reforçados e veículos.' },
+
+      // PROTEÇÕES (6)
+      { id: 'protecao_leve', cat: 'armor', name: 'Proteção Leve', slots: 1, guardaBonus: 2, ppPerm: 0, props: ['+2 Guarda', 'Leve', 'Flexível'], desc: 'Jaquetas de couro grosso ou roupas de motociclista. Não atrapalha movimentos.' },
+      { id: 'protecao_pesada', cat: 'armor', name: 'Proteção Pesada', slots: 4, guardaBonus: 0, ppPerm: 2, armorPenalty: true, props: ['2 PP Permanentes', 'Pesada (-1 passo Furtividade/Atletismo)'], desc: 'Placas metálicas ou traje tático pesado. Reduz em 2 pontos cada golpe recebido continuamente.' },
+      { id: 'colete_policial', cat: 'armor', name: 'Colete Policial', slots: 2, guardaBonus: 0, ppTempMax: 4, props: ['4 PP Temporários', 'Blindagem Absorvente'], desc: 'Absorve até 4 pontos de dano sofridos; após zerar, precisa ser reparado com Mecânica ou Engenharia.' },
+      { id: 'capacete', cat: 'armor', name: 'Capacete', slots: 1, guardaBonus: 1, ppPerm: 1, props: ['+1 Guarda', '1 PP Permanente'], desc: 'Capacete tático, militar ou de motociclista reforçado.' },
+      { id: 'escudo', cat: 'armor', name: 'Escudo', slots: 2, guardaBonus: 1, ppPerm: 0, props: ['+1 Guarda', 'Ocupa 1 Mão', 'Cobertura Móvel'], desc: 'Permite usar Reação para dar cobertura parcial (+2 Guarda à distância) a um aliado adjacente.' },
+      { id: 'roupa_frio', cat: 'armor', name: 'Roupa de Frio', slots: 2, guardaBonus: 0, ppPerm: 0, props: ['Isolamento Térmico'], desc: 'Impede completamente penalidades por Frio Extremo e Hipotermia. Pode ser usado com Proteções Leves.' },
+
+      // SUPRIMENTOS, FERRAMENTAS E ACESSÓRIOS (16)
+      { id: 'kit_primeiros_socorros', cat: 'supplies', name: 'Kit de Primeiros Socorros', slots: 2, maxUses: 3, isMedkit: true, props: ['3 Usos', 'Medicina DT 7 -> 1d4 PV'], desc: 'Gastando Ação Principal (Preparação) e Medicina DT 7, restaura 1d4 PV de um alvo.' },
+      { id: 'injecao_adrenalina', cat: 'supplies', name: 'Injeção de Adrenalina', slots: 1, isAdrenaline: true, props: ['Uso Único', '+4 PV', 'Remove Condições'], desc: 'Restaura 4 PV imediatamente e remove Exausto, Inconsciente ou Paralisado (não funciona em 0 PV).' },
+      { id: 'antidoto', cat: 'supplies', name: 'Antídoto / Antibiótico Básico', slots: 1, isConsumable: true, props: ['Uso Único', '+1 passo vs. Doenças/Toxinas'], desc: 'Concede +1 passo em testes de CORPO ou Resiliência para resistir a infecções, febres ou venenos.' },
+      { id: 'coldre_tatico', cat: 'supplies', name: 'Coldre ou Bainha Tática', slots: 0, isHolster: true, props: ['0 Slots', 'Equipa 1 Arma Leve sem custo de slot'], desc: 'Permite equipar 1 arma Leve diretamente na cintura/ombro sem ocupar slots na mochila.' },
+      { id: 'bandoleira_tatica', cat: 'supplies', name: 'Bandoleira Tática', slots: 0, isSling: true, props: ['0 Slots', '-1 Slot em 1 Arma Pesada'], desc: 'Alça reforçada que reduz em -1 slot o custo de carga de 1 arma Pesada presa ao corpo.' },
+      { id: 'mochila_tatica', cat: 'supplies', name: 'Mochila Tática Reforçada', slots: 0, slotBonus: 2, props: ['0 Slots', '+2 Slots Máximos'], desc: 'Substitui mochila comum e aumenta sua capacidade máxima de carga em +2 slots fixos.' },
+      { id: 'lanterna_tatica', cat: 'supplies', name: 'Lanterna Tática', slots: 1, hasToggle: true, toggleLabels: ['Apagada', 'Acesa (15m)'], props: ['1 Slot', 'Cone 15m / 12h'], desc: 'Ilumina cone de até 15m na escuridão por 12 horas com 1 pilha.' },
+      { id: 'radio_comunicador', cat: 'supplies', name: 'Rádio Comunicador / Walkie-Talkie', slots: 1, hasToggle: true, toggleLabels: ['Desligado', 'Ligado (3km)'], props: ['1 Slot', 'Alcance 3km'], desc: 'Comunicação à distância de até 3 km em terreno aberto (consome pilhas).' },
+      { id: 'gazua', cat: 'supplies', name: 'Ferramentas de Arrombamento / Gazua', slots: 1, props: ['1 Slot', 'Destrancar sem penalidade'], desc: 'Necessário para destrancar fechaduras com a perícia Crime sem sofrer penalidades.' },
+      { id: 'caixa_ferramentas', cat: 'supplies', name: 'Caixa de Ferramentas Básica', slots: 2, isToolbox: true, props: ['2 Slots', 'Reparos Mecânica/Engenharia'], desc: 'Necessária para realizar reparos e consertar itens com a condição Quebrado.' },
+      { id: 'aljava', cat: 'supplies', name: 'Aljava', slots: 1, isQuiver: true, props: ['1 Slot', 'Comporta até 50 Flechas/Virotes'], desc: 'Estojo reforçado que comporta até 50 flechas ou virotes ocupando apenas 1 slot no total.' },
+      { id: 'bolsa_pedras', cat: 'supplies', name: 'Bolsa de Pedras', slots: 1, isStonePouch: true, props: ['1 Slot', 'Comporta até 50 Pedras/Esferas'], desc: 'Pochete que comporta até 50 pedras ou esferas metálicas ocupando apenas 1 slot no total.' },
+      { id: 'racao_comida', cat: 'supplies', name: 'Ração de Comida', slots: 1, stackable: true, stackSize: 10, isFood: true, props: ['1 Slot / 10 un.', '1 un. = 1 dia'], desc: 'Cada unidade supre 1 dia de alimentação de um sobrevivente.' },
+      { id: 'agua_potavel', cat: 'supplies', name: 'Água Potável', slots: 1, stackable: true, stackSize: 10, isWater: true, props: ['1 Slot / 10 un.', '1 un. = 1 dia'], desc: 'Cada unidade supre 1 dia de hidratação de um sobrevivente.' },
+      { id: 'municao_leve', cat: 'supplies', name: 'Munições Leves', slots: 1, stackable: true, stackSize: 10, ammoKey: 'municao_leve', props: ['1 Slot / 10 un.', 'Pistolas, Revólveres, Submetralhadoras'], desc: 'Cartuchos de calibres menores utilizados em pistolas, revólveres e submetralhadoras.' },
+      { id: 'municao_pesada', cat: 'supplies', name: 'Munições Pesadas', slots: 1, stackable: true, stackSize: 10, ammoKey: 'municao_pesada', props: ['1 Slot / 10 un.', 'Fuzis, Rifles, Espingardas'], desc: 'Cartuchos de alto calibre utilizados em fuzis, rifles de precisão e espingardas.' },
+      { id: 'flechas_virotes', cat: 'supplies', name: 'Flechas / Virotes', slots: 1, stackable: true, stackSize: 10, ammoKey: 'flechas', props: ['1 Slot / 10 un. (50 c/ Aljava)', 'Arcos e Bestas'], desc: 'Projéteis para arcos e bestas. Ocupa 1 slot a cada 10 un. (ou até 50 un. em 1 slot se possuir Aljava).' },
+      { id: 'pedras_esferas', cat: 'supplies', name: 'Pedras / Esferas Metálicas', slots: 1, stackable: true, stackSize: 10, ammoKey: 'pedras', props: ['1 Slot / 10 un. (50 c/ Bolsa)', 'Estilingue'], desc: 'Projéteis para estilingue. Ocupa 1 slot a cada 10 un. (ou até 50 un. em 1 slot se possuir Bolsa de Pedras).' },
+      { id: 'combustivel', cat: 'supplies', name: 'Galão de Combustível (Unidades)', slots: 1, stackable: true, stackSize: 10, ammoKey: 'combustivel', props: ['1 Slot / 10 un.', 'Serra Elétrica / Veículos'], desc: 'Combustível necessário para operar Serra Elétrica (1 un./cena) ou veículos.' }
+    ];
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    const STORAGE_KEY = 'declinio_rpg_sheet_v1';
+
+    function getDefaultState() {
+      return {
+        name: '',
+        concept: '',
+        tipo: '',
+        estilo: '',
+        arquetipo: '',
+        level: 1,
+        freeMode: false,
+        baseAttributes: { corpo: 'd8', intelecto: 'd8', alma: 'd6' },
+        // Initial skill choices granted by Tipo (array of skill ids)
+        tipoSkillChoices: { d6: [], d8: [], d10: [] },
+        // Manual skill adjustments (deltas from level up / general abilities / custom)
+        skillDeltas: {},
+        // Attribute deltas from General Abilities (Aumento de Passo em Atributo)
+        attrDeltas: { corpo: 0, intelecto: 0, alma: 0 },
+        // Archetype abilities selected per milestone: { lv1: '', lv3: '', lv7: '', lv11: '' }
+        archAbilities: { lv1: '', lv3: '', lv7: '', lv11: '' },
+        // General abilities selected per milestone: { lv2: '', lv4: '', lv5: '', lv8: '', lv9: '', lv12: '' }
+        genAbilities: { lv2: '', lv4: '', lv5: '', lv8: '', lv9: '', lv12: '' },
+        // Vitals
+        pvCurrent: 12,
+        pcCurrent: 9,
+        stress: 0,
+        willpower: 0,
+        // 4 Permanent Stress slots
+        permanentStress: ['', '', '', ''],
+        // Active conditions
+        conditions: [],
+        // Inventory items array
+        inventory: [],
+        // UI state
+        activePage: 1,
+        darkMode: false
+      };
+    }
+
+    let state = getDefaultState();
+    let currentCatalogCat = 'melee';
+
+    // =========================================================================
+    // 3. CORE RULES & CALCULATIONS ENGINE
+    // =========================================================================
+    function stepUp(die, steps = 1) {
+      let idx = DICE_STEPS.indexOf(die);
+      if (idx === -1) idx = 0;
+      idx = Math.max(0, Math.min(DICE_STEPS.length - 1, idx + steps));
+      return DICE_STEPS[idx];
+    }
+
+    function dieMax(die) {
+      return parseInt(die.replace('d', ''), 10) || 4;
+    }
+
+    function getFinalAttributes() {
+      const attrs = { ...state.baseAttributes };
+      const tipoObj = TIPOS[state.tipo];
+      if (!state.freeMode && tipoObj && tipoObj.attrBonus) {
+        attrs[tipoObj.attrBonus] = stepUp(attrs[tipoObj.attrBonus], 1);
+      }
+      // Apply attribute increases from General Abilities
+      ['corpo', 'intelecto', 'alma'].forEach(k => {
+        if (state.attrDeltas[k]) {
+          attrs[k] = stepUp(attrs[k], state.attrDeltas[k]);
+        }
+      });
+      return attrs;
+    }
+
+    function getSelectedArchAbilities() {
+      const arch = ARQUETIPOS[state.arquetipo];
+      if (!arch) return [];
+      const unlockedMilestones = ['lv1'];
+      if (state.level >= 3) unlockedMilestones.push('lv3');
+      if (state.level >= 7) unlockedMilestones.push('lv7');
+      if (state.level >= 11) unlockedMilestones.push('lv11');
+
+      return unlockedMilestones
+        .map(m => state.archAbilities[m])
+        .filter(Boolean)
+        .map(id => arch.abilities.find(a => a.id === id))
+        .filter(Boolean);
+    }
+
+    function getSelectedGenAbilities() {
+      const milestones = ['lv2', 'lv4', 'lv5', 'lv8', 'lv9', 'lv12'];
+      const reqLevels = { lv2: 2, lv4: 4, lv5: 5, lv8: 8, lv9: 9, lv12: 12 };
+      return milestones
+        .filter(m => state.level >= reqLevels[m] && state.genAbilities[m])
+        .map(m => GENERAL_ABILITIES.find(g => g.id === state.genAbilities[m]))
+        .filter(Boolean);
+    }
+
+    function hasArchAbility(id) {
+      return getSelectedArchAbilities().some(a => a.id === id);
+    }
+
+    function hasGenAbility(id) {
+      return getSelectedGenAbilities().some(g => g.id === id);
+    }
+
+    function countPermanentTraumas() {
+      return state.permanentStress.filter(s => s && s.trim() !== '').length;
+    }
+
+    function hasTraumaType(keyword) {
+      return state.permanentStress.some(s => s && s.toLowerCase().includes(keyword.toLowerCase()));
+    }
+
+    function getSkillDie(skillId) {
+      let baseStep = 0; // d4
+      const arch = ARQUETIPOS[state.arquetipo];
+      if (arch && arch.skills[skillId]) {
+        baseStep = DICE_STEPS.indexOf(arch.skills[skillId]);
+      }
+
+      // Check Tipo initial choices (takes highest if overlaps)
+      if (state.tipoSkillChoices.d6.includes(skillId)) baseStep = Math.max(baseStep, 1);
+      if (state.tipoSkillChoices.d8.includes(skillId)) baseStep = Math.max(baseStep, 2);
+      if (state.tipoSkillChoices.d10.includes(skillId)) baseStep = Math.max(baseStep, 3);
+
+      // Apply manual/level-up deltas
+      const delta = state.skillDeltas[skillId] || 0;
+      let finalIdx = Math.max(0, Math.min(DICE_STEPS.length - 1, baseStep + delta));
+
+      // Check Heavy Armor equipped penalty (-1 step Furtividade / Atletismo)
+      const heavyArmorEquipped = state.inventory.some(i => i.catalogId === 'protecao_pesada' && i.equipped);
+      if (heavyArmorEquipped && (skillId === 'furtividade' || skillId === 'atletismo')) {
+        finalIdx = Math.max(0, finalIdx - 1);
+      }
+
+      return DICE_STEPS[finalIdx];
+    }
+
+    function getDerivedStats() {
+      const attrs = getFinalAttributes();
+      const tipoObj = TIPOS[state.tipo];
+      const maxCorpo = dieMax(attrs.corpo);
+      const maxAlma = dieMax(attrs.alma);
+
+      // PV Max
+      let pvMax = maxCorpo + (tipoObj ? tipoObj.pvBase : 4);
+      if (tipoObj) {
+        if (state.level >= 4) pvMax += tipoObj.pvStep;
+        if (state.level >= 8) pvMax += tipoObj.pvStep;
+        if (state.level >= 12) pvMax += tipoObj.pvStep;
+        if (state.level >= 10 && tipoObj.id === 'robusto') pvMax += 1;
+      }
+      if (hasArchAbility('forca_vontade')) {
+        pvMax += 4; // +2 neste nível e +2 no nível seguinte
+      }
+      if (hasGenAbility('casca_grossa')) {
+        pvMax += 3;
+      }
+      if (hasTraumaType('pv')) {
+        pvMax -= 2;
+      }
+      pvMax = Math.max(1, pvMax);
+
+      // PC Max
+      let pcMax = maxAlma + (tipoObj ? tipoObj.pcBase : 3);
+      if (tipoObj) {
+        if (state.level >= 4) pcMax += tipoObj.pcStep;
+        if (state.level >= 8) pcMax += tipoObj.pcStep;
+        if (state.level >= 12) pcMax += tipoObj.pcStep;
+      }
+      if (hasArchAbility('forca_vontade')) {
+        pcMax += 4;
+      }
+      if (hasTraumaType('pc')) {
+        pcMax -= 2;
+      }
+      pcMax = Math.max(1, pcMax);
+
+      // Guarda & PP
+      let guarda = 7;
+      let guardaNotes = ['Base 7'];
+      let ppPerm = 0;
+      let ppTemp = 0;
+
+      state.inventory.forEach(item => {
+        if (item.equipped) {
+          if (item.guardaBonus) {
+            guarda += item.guardaBonus;
+            guardaNotes.push(`+${item.guardaBonus} ${item.name}`);
+          }
+          if (item.ppPerm) ppPerm += item.ppPerm;
+          if (item.ppTempCurrent) ppTemp += item.ppTempCurrent;
+        }
+      });
+
+      // Conditions modifiers
+      state.conditions.forEach(cId => {
+        const cObj = CONDITIONS_DATA.find(c => c.id === cId);
+        if (cObj && cObj.guardaMod) {
+          guarda += cObj.guardaMod;
+          guardaNotes.push(`${cObj.guardaMod} ${cObj.name}`);
+        }
+      });
+
+      // Slots calculation
+      const slotsInfo = calculateSlots();
+
+      // Speed (Deslocamento)
+      let speed = hasArchAbility('passos_largos') ? 12 : 9;
+      const isOverloaded = slotsInfo.used > slotsInfo.max;
+      const hasZeroSpeedCond = state.conditions.some(cId => {
+        const cObj = CONDITIONS_DATA.find(c => c.id === cId);
+        return cObj && cObj.speedZero;
+      });
+      const hasHalfSpeedCond = state.conditions.some(cId => {
+        const cObj = CONDITIONS_DATA.find(c => c.id === cId);
+        return cObj && cObj.halfSpeed;
+      });
+
+      if (isOverloaded || hasZeroSpeedCond) {
+        speed = 0;
+      } else if (hasHalfSpeedCond) {
+        speed = Math.floor(speed / 2);
+      }
+
+      // Max Willpower
+      const maxWill = hasTraumaType('vontade') ? 2 : 3;
+
+      return {
+        attrs,
+        pvMax,
+        pcMax,
+        guarda,
+        guardaNotes: guardaNotes.join(' | '),
+        ppPerm,
+        ppTemp,
+        speed,
+        slotsInfo,
+        maxWill
+      };
+    }
+
+    function calculateSlots() {
+      let max = 20;
+      if (hasGenAbility('mochileiro')) max += 4;
+      const hasTacBackpack = state.inventory.some(i => i.catalogId === 'mochila_tatica');
+      if (hasTacBackpack) max += 2;
+
+      const hasQuiver = state.inventory.some(i => i.catalogId === 'aljava');
+      const hasStonePouch = state.inventory.some(i => i.catalogId === 'bolsa_pedras');
+
+      let used = 0;
+      state.inventory.forEach(item => {
+        if (item.inHolster) {
+          // Coldre/Bainha equips 1 light weapon with 0 slots
+          used += 0;
+          return;
+        }
+        if (item.stackable) {
+          let stackSize = item.stackSize || 10;
+          if (item.ammoKey === 'flechas' && hasQuiver) stackSize = 50;
+          if (item.ammoKey === 'pedras' && hasStonePouch) stackSize = 50;
+          used += Math.ceil((item.qty || 1) / stackSize);
+        } else {
+          let itemSlots = (item.slots || 0) * (item.qty || 1);
+          if (item.inSling && itemSlots > 0) {
+            itemSlots = Math.max(0, itemSlots - 1);
+          }
+          used += itemSlots;
+        }
+      });
+
+      return { used, max };
+    }
+
+    // =========================================================================
+    // 4. RENDERING & UI UPDATES
+    // =========================================================================
+    function init() {
+      populateArquetiposSelect();
+      loadFromStorage();
+      renderAll();
+    }
+
+    function populateArquetiposSelect() {
+      const sel = document.getElementById('char-arquetipo');
+      Object.values(ARQUETIPOS).forEach(arch => {
+        const sKeys = Object.entries(arch.skills).map(([k, v]) => {
+          const sk = SKILLS_DATA.find(s => s.id === k);
+          return `${sk ? sk.name : k} (${v})`;
+        }).join(', ');
+        const opt = document.createElement('option');
+        opt.value = arch.id;
+        opt.textContent = `${arch.name} [${sKeys}]`;
+        sel.appendChild(opt);
+      });
+    }
+
+    function renderAll() {
+      const stats = getDerivedStats();
+
+      // Theme
+      if (state.darkMode) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+
+      // Page visibility
+      document.getElementById('page-1').classList.toggle('hidden', state.activePage !== 1);
+      document.getElementById('page-2').classList.toggle('hidden', state.activePage !== 2);
+      document.getElementById('tab-p1').classList.toggle('active', state.activePage === 1);
+      document.getElementById('tab-p2').classList.toggle('active', state.activePage === 2);
+
+      // Header & Basic inputs
+      document.getElementById('char-name').value = state.name;
+      document.getElementById('char-concept').value = state.concept;
+      document.getElementById('char-tipo').value = state.tipo;
+      document.getElementById('char-estilo').value = state.estilo;
+      document.getElementById('char-arquetipo').value = state.arquetipo;
+      document.getElementById('char-level-display').textContent = state.level;
+
+      // Sync P2 Header
+      document.getElementById('p2-char-name').textContent = state.name || 'SEM NOME';
+      document.getElementById('p2-char-level').textContent = state.level;
+      document.getElementById('p2-level-badge').textContent = state.level;
+
+      // Summaries
+      const tipoObj = TIPOS[state.tipo];
+      document.getElementById('tipo-summary').textContent = tipoObj
+        ? `Bônus: +1 passo em ${tipoObj.attrBonus.toUpperCase()} | Perícias: ${formatSkillGrantText(tipoObj.skillGrants)} | Hab: ${tipoObj.abilityName}`
+        : 'Escolha um Tipo para aplicar bônus de atributo, PV, PC e perícias iniciais.';
+
+      const estiloObj = ESTILOS[state.estilo];
+      document.getElementById('estilo-summary').textContent = estiloObj
+        ? `${estiloObj.initiative} Nv.1: ${estiloObj.lv1.name}.`
+        : 'Define sua ordem natural na iniciativa e habilidades de Nível 1 e 6.';
+
+      const archObj = ARQUETIPOS[state.arquetipo];
+      document.getElementById('arquetipo-summary').textContent = archObj
+        ? `Perícias treinadas concedidas automaticamente na grade abaixo.`
+        : 'Concede 2 perícias treinadas (d8 e d6) e habilidades nos níveis 1, 3, 7 e 11.';
+
+      // Level Milestone Hints
+      const milestonesText = {
+        1: 'Nv 1: Tipo + Estilo Nv1 + Hab. Arquétipo',
+        2: 'Nv 2: +1 Habilidade Geral',
+        3: 'Nv 3: +1 Habilidade de Arquétipo',
+        4: 'Nv 4: Melhoria PV/PC + Hab. Geral',
+        5: 'Nv 5: +1 Habilidade Geral',
+        6: 'Nv 6: 2ª Habilidade de Estilo',
+        7: 'Nv 7: +1 Habilidade de Arquétipo',
+        8: 'Nv 8: Melhoria PV/PC + Hab. Geral',
+        9: 'Nv 9: +1 Habilidade Geral',
+        10: 'Nv 10: Melhoria da Hab. de Tipo',
+        11: 'Nv 11: Última Hab. de Arquétipo',
+        12: 'Nv 12: Melhoria PV/PC + Hab. Geral'
+      };
+      document.getElementById('level-milestone-badge').textContent = milestonesText[state.level].split(':')[0];
+      document.getElementById('level-next-hint').textContent = state.level < 12
+        ? `Próximo: ${milestonesText[state.level + 1]}`
+        : 'NÍVEL MÁXIMO ALCANÇADO (12)';
+
+      // Attributes
+      renderAttributes(stats.attrs);
+
+      // Vitals
+      document.getElementById('pv-max').textContent = stats.pvMax;
+      document.getElementById('pv-current').value = state.pvCurrent;
+      document.getElementById('pv-formula-hint').textContent = tipoObj
+        ? `Max(${stats.attrs.corpo}) + ${tipoObj.pvBase}${state.level >= 4 ? ` (+${tipoObj.pvStep}/marco)` : ''}`
+        : `Max(${stats.attrs.corpo}) + 4`;
+      document.getElementById('zero-pv-warning').classList.toggle('hidden', state.pvCurrent > 0);
+
+      document.getElementById('pc-max').textContent = stats.pcMax;
+      document.getElementById('pc-current').value = state.pcCurrent;
+      document.getElementById('pc-formula-hint').textContent = tipoObj
+        ? `Max(${stats.attrs.alma}) + ${tipoObj.pcBase}${state.level >= 4 ? ` (+${tipoObj.pcStep}/marco)` : ''}`
+        : `Max(${stats.attrs.alma}) + 3`;
+
+      document.getElementById('stat-guarda').textContent = stats.guarda;
+      document.getElementById('guarda-breakdown').textContent = stats.guardaNotes;
+      document.getElementById('guarda-breakdown').title = stats.guardaNotes;
+
+      document.getElementById('stat-pp').textContent = stats.ppPerm + stats.ppTemp;
+      document.getElementById('pp-breakdown').textContent = `${stats.ppPerm} Perm / ${stats.ppTemp} Temp`;
+
+      document.getElementById('stat-speed').textContent = `${stats.speed}m`;
+      document.getElementById('speed-squares').textContent = `${Math.floor(stats.speed / 1.5)} quad.`;
+
+      // Stress & Willpower
+      renderStressAndWill(stats.maxWill);
+
+      // Conditions
+      renderConditions();
+
+      // Skills (26)
+      renderSkills();
+
+      // Page 2: Abilities, Permanent Stress, Inventory
+      renderAbilitiesPage();
+      renderPermanentStress();
+      renderInventory(stats.slotsInfo);
+    }
+
+    function formatSkillGrantText(grants) {
+      const parts = [];
+      if (grants.d10) parts.push(`${grants.d10} em d10`);
+      if (grants.d8) parts.push(`${grants.d8} em d8`);
+      if (grants.d6) parts.push(`${grants.d6} em d6`);
+      return parts.join(', ');
+    }
+
+    function renderAttributes(finalAttrs) {
+      const container = document.getElementById('attributes-container');
+      const freeBtn = document.getElementById('free-mode-btn');
+      freeBtn.textContent = state.freeMode ? 'Modo: Livre' : 'Modo: Oficial';
+
+      const attrList = [
+        { id: 'corpo', label: 'CORPO', sub: 'Força, resistência física, vigor' },
+        { id: 'intelecto', label: 'INTELECTO', sub: 'Raciocínio, técnica, entendimento' },
+        { id: 'alma', label: 'ALMA', sub: 'Carisma, presença, força mental' }
+      ];
+
+      // Check official base pool validity [d8, d8, d6]
+      const baseVals = Object.values(state.baseAttributes).sort();
+      const validPool = JSON.stringify(baseVals) === JSON.stringify(['d6', 'd8', 'd8']);
+      const helper = document.getElementById('attr-helper-text');
+      if (state.freeMode) {
+        helper.innerHTML = `<span class="opacity-80">Modo Livre ativo: ajuste qualquer dado diretamente (ideal para inimigos/NPCs).</span>`;
+      } else if (!validPool) {
+        helper.innerHTML = `<span class="text-red-700 dark:text-red-400 font-bold">⚠ Distribuição base oficial exige exatamente: d8, d8 e d6.</span>`;
+      } else {
+        helper.innerHTML = `Base oficial <b>[d8, d8, d6]</b> válida + bônus de Tipo aplicado.`;
+      }
+
+      const tipoObj = TIPOS[state.tipo];
+
+      container.innerHTML = attrList.map(a => {
+        const isTipoBonus = !state.freeMode && tipoObj && tipoObj.attrBonus === a.id;
+        const baseDie = state.baseAttributes[a.id];
+        const finalDie = finalAttrs[a.id];
+        const options = state.freeMode ? DICE_STEPS : ['d6', 'd8'];
+
+        return `
+          <div class="dossier-card p-2 rounded-sm flex items-center justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-mono text-sm font-black tracking-wide">${a.label}</span>
+                ${isTipoBonus ? `<span class="font-mono text-[9px] px-1 border border-current font-bold">+1 TIPO</span>` : ''}
+                ${state.attrDeltas[a.id] > 0 ? `<span class="font-mono text-[9px] px-1 border border-current font-bold">+${state.attrDeltas[a.id]} NV</span>` : ''}
+              </div>
+              <span class="block text-[10px] opacity-70">${a.sub}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <select onchange="setBaseAttribute('${a.id}', this.value)" class="dossier-input font-mono text-xs font-bold px-1.5 py-1 rounded-sm no-print" title="Dado Base">
+                ${options.map(d => `<option value="${d}" ${baseDie === d ? 'selected' : ''}>Base ${d}</option>`).join('')}
+              </select>
+              <div class="w-12 h-10 border-2 border-current flex items-center justify-center font-mono text-lg font-black rounded-sm">
+                ${finalDie}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStressAndWill(maxWill) {
+      // Stress Pips (6)
+      const stressContainer = document.getElementById('stress-pips-container');
+      document.getElementById('stress-count-label').textContent = `${state.stress} / 6`;
+      stressContainer.innerHTML = '';
+      for (let i = 1; i <= 6; i++) {
+        const pip = document.createElement('button');
+        pip.type = 'button';
+        pip.className = `pip-box pip-stress rounded-sm ${i <= state.stress ? 'active' : ''}`;
+        pip.textContent = i === 6 ? '!' : i;
+        pip.title = i === 6 ? '6º Estresse: Dispara Colapso Mental!' : `Marcar/Desmarcar Estresse ${i}`;
+        pip.onclick = () => toggleStressPip(i);
+        stressContainer.appendChild(pip);
+      }
+
+      // Willpower Pips (maxWill: 3 or 2)
+      document.getElementById('will-max-label').textContent = maxWill;
+      if (state.willpower > maxWill) state.willpower = maxWill;
+      document.getElementById('will-count-label').textContent = `${state.willpower} / ${maxWill}`;
+      const willContainer = document.getElementById('will-pips-container');
+      willContainer.innerHTML = '';
+      for (let i = 1; i <= maxWill; i++) {
+        const pip = document.createElement('button');
+        pip.type = 'button';
+        pip.className = `pip-box pip-will rounded-sm ${i <= state.willpower ? 'active' : ''}`;
+        pip.textContent = '★';
+        pip.title = `Marcar/Desmarcar Vontade ${i}`;
+        pip.onclick = () => toggleWillPip(i);
+        willContainer.appendChild(pip);
+      }
+    }
+
+    function renderConditions() {
+      const container = document.getElementById('conditions-container');
+      const notesContainer = document.getElementById('active-conditions-notes');
+
+      container.innerHTML = CONDITIONS_DATA.map(c => {
+        const active = state.conditions.includes(c.id);
+        return `
+          <button onclick="toggleCondition('${c.id}')" class="px-2 py-1 text-[11px] font-mono font-bold border border-current rounded-sm transition-colors ${active ? 'bg-red-800 text-white border-red-800' : 'opacity-75 hover:opacity-100'}">
+            ${active ? '■' : '□'} ${c.name}
+          </button>
+        `;
+      }).join('');
+
+      if (state.conditions.length === 0) {
+        notesContainer.innerHTML = '';
+      } else {
+        notesContainer.innerHTML = state.conditions.map(id => {
+          const c = CONDITIONS_DATA.find(x => x.id === id);
+          return `<div class="p-1.5 dossier-card rounded-sm border-l-4 border-l-red-800"><b>${c.name}:</b> ${c.effect}</div>`;
+        }).join('');
+      }
+    }
+
+    function renderSkills() {
+      const grid = document.getElementById('skills-grid');
+      const categories = ['TÉCNICAS', 'SOCIAIS', 'COMBATE', 'GERAIS'];
+      const arch = ARQUETIPOS[state.arquetipo];
+      const tipoObj = TIPOS[state.tipo];
+
+      // Skill budget tracker
+      const tracker = document.getElementById('skill-budget-tracker');
+      if (tipoObj) {
+        const g = tipoObj.skillGrants;
+        const c = state.tipoSkillChoices;
+        const parts = [];
+        if (g.d10 > 0) parts.push(`d10: ${c.d10.length}/${g.d10}`);
+        if (g.d8 > 0) parts.push(`d8: ${c.d8.length}/${g.d8}`);
+        if (g.d6 > 0) parts.push(`d6: ${c.d6.length}/${g.d6}`);
+        tracker.innerHTML = `Escolhas do Tipo (${tipoObj.name}): <b>${parts.join(' | ')}</b> <span class="opacity-70">(Clique nos botões d6/d8/d10 nas perícias ou use +/-)</span>`;
+      } else {
+        tracker.innerHTML = `Selecione um <b>Tipo</b> e um <b>Arquétipo</b> para distribuir suas perícias treinadas.`;
+      }
+
+      grid.innerHTML = categories.map(cat => {
+        const catSkills = SKILLS_DATA.filter(s => s.cat === cat);
+        return `
+          <div class="dossier-box p-2.5 rounded-sm">
+            <div class="flex items-center justify-between border-b border-current pb-1 mb-2">
+              <h4 class="font-mono text-xs font-black uppercase tracking-wider">${cat}</h4>
+              <span class="font-mono text-[10px] opacity-70">${catSkills.length} perícias</span>
+            </div>
+            <div class="space-y-1.5">
+              ${catSkills.map(skill => {
+                const die = getSkillDie(skill.id);
+                const isTrained = die !== 'd4';
+                const archDie = arch && arch.skills[skill.id];
+                const isTipoD6 = state.tipoSkillChoices.d6.includes(skill.id);
+                const isTipoD8 = state.tipoSkillChoices.d8.includes(skill.id);
+                const isTipoD10 = state.tipoSkillChoices.d10.includes(skill.id);
+
+                // Subsystem info
+                let subInfo = '';
+                const maxVal = dieMax(die);
+                if (skill.subsystem === 'lockpick') {
+                  subInfo = `${maxVal / 2} tent./rodada`;
+                } else if (skill.subsystem === 'hacking') {
+                  subInfo = `${maxVal - 2} tent./chave`;
+                } else if (skill.subsystem === 'balance') {
+                  subInfo = `${maxVal / 2} Dados Equil.`;
+                }
+
+                return `
+                  <div class="dossier-card px-2 py-1.5 rounded-sm flex items-center justify-between gap-1 ${isTrained ? 'border-l-4 border-l-current' : 'opacity-85'}">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1 flex-wrap">
+                        <span class="text-xs font-bold truncate">${skill.name}</span>
+                        ${archDie ? `<span class="font-mono text-[9px] px-1 border border-current font-bold" title="Concedida pelo Arquétipo">ARQ</span>` : ''}
+                        ${(isTipoD6 || isTipoD8 || isTipoD10) ? `<span class="font-mono text-[9px] px-1 border border-current font-bold" title="Escolhida pelo Tipo">TIPO</span>` : ''}
+                      </div>
+                      ${subInfo ? `<span class="block font-mono text-[9px] opacity-70">${subInfo}</span>` : ''}
+                    </div>
+
+                    <div class="flex items-center gap-1 shrink-0">
+                      ${tipoObj && !archDie ? renderTipoSkillPills(skill.id, tipoObj.skillGrants) : ''}
+                      <button onclick="adjustSkillDelta('${skill.id}', -1)" class="btn-tactical w-5 h-6 text-[10px] rounded-sm no-print" title="Reduzir 1 passo">-</button>
+                      <span class="w-8 text-center font-mono text-xs font-black ${isTrained ? 'underline' : ''}">${die}</span>
+                      <button onclick="adjustSkillDelta('${skill.id}', 1)" class="btn-tactical w-5 h-6 text-[10px] rounded-sm no-print" title="Aumentar 1 passo">+</button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTipoSkillPills(skillId, grants) {
+      const tiers = ['d6', 'd8', 'd10'].filter(t => grants[t] > 0);
+      return tiers.map(t => {
+        const active = state.tipoSkillChoices[t].includes(skillId);
+        return `
+          <button onclick="toggleTipoSkillChoice('${skillId}', '${t}')" class="px-1 h-5 font-mono text-[9px] border border-current rounded-sm no-print ${active ? 'bg-black text-white dark:bg-white dark:text-black font-black' : 'opacity-40 hover:opacity-100'}" title="Alocar perícia inicial ${t} do Tipo">
+            ${t}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderAbilitiesPage() {
+      const container = document.getElementById('abilities-list');
+      const blocks = [];
+
+      // 1. TIPO ABILITY (Nv 1 & Nv 10)
+      const tipoObj = TIPOS[state.tipo];
+      if (tipoObj) {
+        blocks.push(`
+          <div class="dossier-card p-3 rounded-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">TIPO // NV. 1</span>
+                <h4 class="font-mono text-sm font-black uppercase">${tipoObj.abilityName} (${tipoObj.name})</h4>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-mono text-[11px] font-bold opacity-80">Custo: ${tipoObj.abilityCost}</span>
+                ${tipoObj.id === 'esperto' ? `<button onclick="spendPC(1, 'Clarear Ideias')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print">Gastar 1 PC</button>` : ''}
+                ${tipoObj.id === 'robusto' ? `<button onclick="addStress(1, 'Duro na Queda')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print">+1 Estresse</button>` : ''}
+              </div>
+            </div>
+            <p class="text-xs leading-relaxed">${tipoObj.abilityDesc}</p>
+            ${state.level >= 10 ? `<div class="mt-2 p-2 dossier-box rounded-sm text-xs font-semibold">${tipoObj.abilityNv10Desc}</div>` : `<p class="font-mono text-[10px] opacity-60 mt-1">Evolui automaticamente no Nível 10.</p>`}
+          </div>
+        `);
+      }
+
+      // 2. ESTILO ABILITIES (Nv 1 & Nv 6)
+      const estiloObj = ESTILOS[state.estilo];
+      if (estiloObj) {
+        blocks.push(`
+          <div class="dossier-card p-3 rounded-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">ESTILO // NV. 1</span>
+                <h4 class="font-mono text-sm font-black uppercase">${estiloObj.lv1.name} (${estiloObj.name})</h4>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-mono text-[11px] font-bold opacity-80">Custo: ${estiloObj.lv1.cost}</span>
+                <button onclick="spendPC(${estiloObj.id === 'tatico' ? 1 : 2}, '${estiloObj.lv1.name}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print">
+                  Gastar ${estiloObj.lv1.cost}
+                </button>
+              </div>
+            </div>
+            <p class="text-xs leading-relaxed">${estiloObj.lv1.desc}</p>
+            <p class="font-mono text-[10px] opacity-75 mt-1">Iniciativa: ${estiloObj.initiative}</p>
+          </div>
+        `);
+
+        if (state.level >= 6) {
+          blocks.push(`
+            <div class="dossier-card p-3 rounded-sm">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">ESTILO // NV. 6</span>
+                  <h4 class="font-mono text-sm font-black uppercase">${estiloObj.lv6.name}</h4>
+                </div>
+                <span class="font-mono text-[11px] font-bold opacity-80">Custo: ${estiloObj.lv6.cost}</span>
+              </div>
+              <p class="text-xs leading-relaxed">${estiloObj.lv6.desc}</p>
+            </div>
+          `);
+        }
+      }
+
+      // 3. ARQUÉTIPO ABILITIES (Nv 1, 3, 7, 11)
+      const archObj = ARQUETIPOS[state.arquetipo];
+      if (archObj) {
+        const archMilestones = [
+          { key: 'lv1', req: 1, label: 'ARQUÉTIPO // NV. 1' },
+          { key: 'lv3', req: 3, label: 'ARQUÉTIPO // NV. 3' },
+          { key: 'lv7', req: 7, label: 'ARQUÉTIPO // NV. 7' },
+          { key: 'lv11', req: 11, label: 'ARQUÉTIPO // NV. 11' }
+        ];
+
+        archMilestones.forEach(m => {
+          if (state.level >= m.req) {
+            const chosenId = state.archAbilities[m.key];
+            const chosenAb = archObj.abilities.find(a => a.id === chosenId);
+            const alreadyChosenIds = Object.entries(state.archAbilities)
+              .filter(([k]) => k !== m.key)
+              .map(([, v]) => v);
+
+            blocks.push(`
+              <div class="dossier-card p-3 rounded-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">${m.label}</span>
+                    <h4 class="font-mono text-sm font-black uppercase">${chosenAb ? chosenAb.name : 'Escolha uma Habilidade de ' + archObj.name}</h4>
+                  </div>
+                  <select onchange="selectArchAbility('${m.key}', this.value)" class="dossier-input font-mono text-xs px-2 py-1 rounded-sm no-print">
+                    <option value="">-- Selecionar Habilidade --</option>
+                    ${archObj.abilities.map(ab => `
+                      <option value="${ab.id}" ${chosenId === ab.id ? 'selected' : ''} ${alreadyChosenIds.includes(ab.id) ? 'disabled' : ''}>
+                        ${ab.name} (${ab.cost})
+                      </option>
+                    `).join('')}
+                  </select>
+                </div>
+                ${chosenAb ? `
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs leading-relaxed">${chosenAb.desc}</p>
+                    ${renderQuickCostButton(chosenAb)}
+                  </div>
+                ` : `<p class="text-xs italic opacity-65">Selecione uma das 4 opções exclusivas de ${archObj.name} acima.</p>`}
+              </div>
+            `);
+          }
+        });
+      }
+
+      // 4. HABILIDADES GERAIS (Nv 2, 4, 5, 8, 9, 12)
+      const genMilestones = [
+        { key: 'lv2', req: 2 },
+        { key: 'lv4', req: 4 },
+        { key: 'lv5', req: 5 },
+        { key: 'lv8', req: 8 },
+        { key: 'lv9', req: 9 },
+        { key: 'lv12', req: 12 }
+      ];
+
+      genMilestones.forEach(m => {
+        if (state.level >= m.req) {
+          const chosenId = state.genAbilities[m.key];
+          const chosenGen = GENERAL_ABILITIES.find(g => g.id === chosenId);
+
+          blocks.push(`
+            <div class="dossier-card p-3 rounded-sm">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">HAB. GERAL // NV. ${m.req}</span>
+                  <h4 class="font-mono text-sm font-black uppercase">${chosenGen ? chosenGen.name : 'Escolha uma Habilidade Geral'}</h4>
+                </div>
+                <select onchange="selectGenAbility('${m.key}', this.value)" class="dossier-input font-mono text-xs px-2 py-1 rounded-sm no-print">
+                  <option value="">-- Selecionar Habilidade Geral --</option>
+                  ${GENERAL_ABILITIES.map(g => {
+                    const valid = checkGenPrereq(g, m.key);
+                    return `
+                      <option value="${g.id}" ${chosenId === g.id ? 'selected' : ''} ${!valid && chosenId !== g.id ? 'disabled' : ''}>
+                        ${g.name} [${g.prereqText}] ${!valid && chosenId !== g.id ? '(Req. não cumprido)' : ''}
+                      </option>
+                    `;
+                  }).join('')}
+                </select>
+              </div>
+              ${chosenGen ? `
+                <p class="text-xs leading-relaxed">${chosenGen.desc}</p>
+                ${chosenGen.id === 'aumento_atributo' ? renderAttrBoostControls() : ''}
+              ` : `<p class="text-xs italic opacity-65">Desbloqueada no nível ${m.req}. Selecione no menu acima.</p>`}
+            </div>
+          `);
+        }
+      });
+
+      if (blocks.length === 0) {
+        container.innerHTML = `<p class="text-xs font-mono opacity-65 py-4 text-center">Selecione um Tipo, Estilo e Arquétipo na Página 01 para visualizar e configurar suas habilidades.</p>`;
+      } else {
+        container.innerHTML = blocks.join('');
+      }
+    }
+
+    function renderQuickCostButton(ab) {
+      const pcMatch = ab.cost.match(/^(\d+)\s*PC/i);
+      if (pcMatch) {
+        const amt = parseInt(pcMatch[1], 10);
+        return `<button onclick="spendPC(${amt}, '${ab.name}')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm shrink-0 no-print">Gastar ${amt} PC</button>`;
+      }
+      if (ab.cost.toLowerCase().includes('estresse')) {
+        return `<button onclick="addStress(1, '${ab.name}')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm shrink-0 no-print">+1 Estresse</button>`;
+      }
+      return '';
+    }
+
+    function renderAttrBoostControls() {
+      return `
+        <div class="mt-2 pt-2 border-t border-dashed border-current flex flex-wrap items-center gap-2 no-print">
+          <span class="font-mono text-[10px] font-bold">Ajustar Atributos (+1 passo):</span>
+          ${['corpo', 'intelecto', 'alma'].map(k => `
+            <div class="flex items-center gap-1 font-mono text-[11px]">
+              <span class="uppercase font-bold">${k}:</span>
+              <button onclick="adjustAttrDelta('${k}', -1)" class="btn-tactical px-1.5 py-0.5 text-[10px]">-</button>
+              <span>+${state.attrDeltas[k]}</span>
+              <button onclick="adjustAttrDelta('${k}', 1)" class="btn-tactical px-1.5 py-0.5 text-[10px]">+</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function checkGenPrereq(gen, currentSlotKey) {
+      // Check max count or uniqueness
+      const otherSelected = Object.entries(state.genAbilities)
+        .filter(([k, v]) => k !== currentSlotKey && v === gen.id);
+      if (!gen.repeatable && !gen.maxCount && otherSelected.length > 0) return false;
+      if (gen.maxCount && otherSelected.length >= gen.maxCount) return false;
+
+      if (gen.prereqLevel && state.level < gen.prereqLevel) return false;
+
+      if (gen.prereqSkill) {
+        const curDie = getSkillDie(gen.prereqSkill.id);
+        if (DICE_STEPS.indexOf(curDie) < DICE_STEPS.indexOf(gen.prereqSkill.min)) return false;
+      }
+
+      if (gen.prereqAnySkill) {
+        const ok = gen.prereqAnySkill.some(req => {
+          const curDie = getSkillDie(req.id);
+          return DICE_STEPS.indexOf(curDie) >= DICE_STEPS.indexOf(req.min);
+        });
+        if (!ok) return false;
+      }
+
+      return true;
+    }
+
+    function renderPermanentStress() {
+      const container = document.getElementById('permanent-stress-list');
+      const presets = [
+        '1. Redução de PV Permanente (-2 PV Máx.)',
+        '2. Redução de PC Permanente (-2 PC Máx.)',
+        '3. Redução de Espaços de Vontade Permanente (Máx. 2)',
+        '4. Redução de Passo em Atributo Permanente (-1 passo)',
+        '5. Redução de Passo em Perícia Permanente (-1 passo)',
+        '6. Paranoia Severa (1 PC para aceitar Ajudar)',
+        '7. Mente Instável (-1 fixo em INTELECTO)',
+        '8. Mão Trêmula (-1 fixo em CORPO)',
+        '9. Alma Cansada (-1 fixo em ALMA)'
+      ];
+
+      container.innerHTML = [0, 1, 2, 3].map(idx => {
+        const val = state.permanentStress[idx] || '';
+        return `
+          <div class="dossier-card p-2 rounded-sm">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-mono text-[11px] font-black">SEQUELA 0${idx + 1}.</span>
+              <select onchange="if(this.value) setPermanentStress(${idx}, this.value)" class="dossier-input font-mono text-[10px] px-1 py-0.5 rounded-sm max-w-[170px] no-print">
+                <option value="">-- Tabela 1d10 --</option>
+                ${presets.map(p => `<option value="${p}">${p}</option>`).join('')}
+              </select>
+            </div>
+            <input type="text" value="${val.replace(/"/g, '&quot;')}" oninput="setPermanentStress(${idx}, this.value)" placeholder="Descreva a sequela permanente..." class="dossier-input w-full px-2 py-1 text-xs rounded-sm" />
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
+    // 5. INVENTORY & FUNCTIONAL ITEM MECHANICS
+    // =========================================================================
+    function renderInventory(slotsInfo) {
+      const listEl = document.getElementById('inventory-list');
+      const emptyEl = document.getElementById('inventory-empty');
+
+      document.getElementById('slots-used').textContent = slotsInfo.used;
+      document.getElementById('slots-max').textContent = slotsInfo.max;
+
+      const counterBox = document.getElementById('slots-counter-box');
+      const overloadWarn = document.getElementById('overload-warning');
+      const isOverloaded = slotsInfo.used > slotsInfo.max;
+
+      if (isOverloaded) {
+        counterBox.classList.add('bg-red-800', 'text-white', 'border-red-800');
+        overloadWarn.classList.remove('hidden');
+      } else {
+        counterBox.classList.remove('bg-red-800', 'text-white', 'border-red-800');
+        overloadWarn.classList.add('hidden');
+      }
+
+      if (state.inventory.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      const finalAttrs = getFinalAttributes();
+      const hasHolster = state.inventory.some(i => i.catalogId === 'coldre_tatico');
+      const hasSling = state.inventory.some(i => i.catalogId === 'bandoleira_tatica');
+      const hasToolbox = state.inventory.some(i => i.catalogId === 'caixa_ferramentas');
+      const hasQuiver = state.inventory.some(i => i.catalogId === 'aljava');
+      const hasStonePouch = state.inventory.some(i => i.catalogId === 'bolsa_pedras');
+
+      listEl.innerHTML = state.inventory.map((item, idx) => {
+        // Calculate slot cost for display
+        let slotCost = 0;
+        if (item.inHolster) {
+          slotCost = 0;
+        } else if (item.stackable) {
+          let stackSize = item.stackSize || 10;
+          if (item.ammoKey === 'flechas' && hasQuiver) stackSize = 50;
+          if (item.ammoKey === 'pedras' && hasStonePouch) stackSize = 50;
+          slotCost = Math.ceil((item.qty || 1) / stackSize);
+        } else {
+          slotCost = (item.slots || 0) * (item.qty || 1);
+          if (item.inSling && slotCost > 0) slotCost = Math.max(0, slotCost - 1);
+        }
+
+        // Warnings
+        let warnings = [];
+        if (item.reqCorpo && dieMax(finalAttrs.corpo) < dieMax(item.reqCorpo)) {
+          warnings.push(`⚠ Exige CORPO ${item.reqCorpo}+ (Atual: ${finalAttrs.corpo})`);
+        }
+        if (item.broken) {
+          warnings.push(`⚠ CONDIÇÃO: QUEBRADO / TRAVADO`);
+        }
+
+        // Interactive Controls based on item type
+        let interactiveControls = '';
+
+        // A. Ranged Weapons (Ammo, Fire, Burst, Reload, Jam)
+        if (item.cat === 'ranged' && item.cap) {
+          const curAmmo = item.ammoCurrent ?? item.cap;
+          const pct = Math.round((curAmmo / item.cap) * 100);
+          interactiveControls += `
+            <div class="mt-2 pt-2 border-t border-dashed border-current space-y-1.5">
+              <div class="flex items-center justify-between font-mono text-[11px]">
+                <span class="font-bold">MUNIÇÃO NO PENTE: ${curAmmo} / ${item.cap}</span>
+                ${item.reliable ? `<span class="px-1 border border-current text-[9px] font-bold">CONFIÁVEL</span>` : ''}
+              </div>
+              <div class="w-full h-2 border border-current bg-transparent overflow-hidden">
+                <div class="h-full bg-current transition-all" style="width: ${pct}%"></div>
+              </div>
+              <div class="flex flex-wrap gap-1.5 pt-0.5 no-print">
+                <button onclick="fireWeapon(${idx}, 1)" ${curAmmo <= 0 || item.broken ? 'disabled' : ''} class="btn-tactical-solid px-2 py-1 text-[10px] rounded-sm">
+                  Disparar (-1)
+                </button>
+                ${item.hasBurst ? `
+                  <button onclick="fireWeapon(${idx}, 4)" ${curAmmo < 4 || item.broken ? 'disabled' : ''} class="btn-tactical px-2 py-1 text-[10px] rounded-sm" title="Gasta 4 munições e usa RA no dano">
+                    Rajada (-4 / RA)
+                  </button>
+                ` : ''}
+                <button onclick="reloadWeapon(${idx})" ${curAmmo >= item.cap ? 'disabled' : ''} class="btn-tactical px-2 py-1 text-[10px] rounded-sm">
+                  Recarregar
+                </button>
+                ${!item.reliable ? `
+                  <button onclick="toggleBroken(${idx})" class="btn-tactical px-2 py-1 text-[10px] rounded-sm">
+                    ${item.broken ? 'Destravar / Reparar' : 'Marcar Travou'}
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }
+
+        // B. Chainsaw (Fuel & Jam)
+        if (item.isChainsaw) {
+          interactiveControls += `
+            <div class="mt-2 pt-2 border-t border-dashed border-current flex flex-wrap gap-1.5 no-print">
+              <button onclick="useChainsawFuel(${idx})" ${item.broken ? 'disabled' : ''} class="btn-tactical-solid px-2 py-1 text-[10px] rounded-sm">
+                Ligar na Cena (-1 Combustível)
+              </button>
+              <button onclick="toggleBroken(${idx})" class="btn-tactical px-2 py-1 text-[10px] rounded-sm">
+                ${item.broken ? 'Consertar Corrente' : 'Engasgou / Defeito'}
+              </button>
+            </div>
+          `;
+        }
+
+        // C. Armor & Protection
+        if (item.cat === 'armor') {
+          interactiveControls += `
+            <div class="mt-2 pt-2 border-t border-dashed border-current flex flex-wrap items-center justify-between gap-2 no-print">
+              <button onclick="toggleEquipArmor(${idx})" class="${item.equipped ? 'btn-tactical-solid' : 'btn-tactical'} px-2.5 py-1 text-[10px] rounded-sm">
+                ${item.equipped ? '✓ Equipado no Corpo' : 'Equipar Proteção'}
+              </button>
+              ${item.ppTempMax ? `
+                <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                  <span class="font-bold">PP Colete: ${item.ppTempCurrent}/${item.ppTempMax}</span>
+                  <button onclick="adjustVestPP(${idx}, -1)" ${item.ppTempCurrent <= 0 ? 'disabled' : ''} class="btn-tactical px-1.5 py-0.5 text-[10px]">-1 Dano</button>
+                  <button onclick="adjustVestPP(${idx}, 4)" ${item.ppTempCurrent >= item.ppTempMax ? 'disabled' : ''} class="btn-tactical px-1.5 py-0.5 text-[10px]" title="Reparar com Mecânica/Engenharia">Reparar</button>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }
+
+        // D. Medkit (3/3 uses)
+        if (item.isMedkit) {
+          const uses = item.usesCurrent ?? item.maxUses;
+          interactiveControls += `
+            <div class="mt-2 pt-2 border-t border-dashed border-current flex items-center justify-between gap-2 no-print">
+              <span class="font-mono text-[11px] font-bold">USOS RESTANTES: ${uses} / ${item.maxUses}</span>
+              <button onclick="useMedkit(${idx})" class="btn-tactical-solid px-2.5 py-1 text-[10px] rounded-sm">
+                Usar Kit (-1 uso)
+              </button>
+            </div>
+          `;
+        }
+
+        // E. Adrenaline Injection (+4 PV)
+        if (item.isAdrenaline) {
+          interactiveControls += `
+            <div class="mt-2 pt-2 border-t border-dashed border-current flex justify-end no-print">
+              <button onclick="useAdrenaline(${idx})" class="btn-tactical-solid px-2.5 py-1 text-[10px] rounded-sm">
+                💉 Aplicar Injeção (+4 PV)
+              </button>
+            </div>
+          `;
+        }
+
+        // F. Food & Water & Consumables & Explosives
+        if (item.isFood || item.isWater || item.isConsumable || item.isExplosive) {
+          let btnLabel = 'Consumir (-1)';
+          if (item.isFood) btnLabel = 'Comer Ração 1 dia (-1)';
+          if (item.isWater) btnLabel = 'Beber Água 1 dia (-1)';
+          if (item.isExplosive) btnLabel = '💥 Arremessar / Detonar (-1)';
+
+          interactiveControls += `
+            <div class="mt-2 pt-2 border-t border-dashed border-current flex justify-end no-print">
+              <button onclick="consumeItemUnit(${idx})" class="btn-tactical-solid px-2.5 py-1 text-[10px] rounded-sm">
+                ${btnLabel}
+              </button>
+            </div>
+          `;
+        }
+
+        // G. Toggles (Flashlight, Radio)
+        if (item.hasToggle) {
+          const isOn = !!item.toggledOn;
+          interactiveControls += `
+            <div class="mt-2 pt-2 border-t border-dashed border-current flex items-center justify-between no-print">
+              <span class="font-mono text-[11px] font-bold">ESTADO: ${isOn ? item.toggleLabels[1] : item.toggleLabels[0]}</span>
+              <button onclick="toggleItemSwitch(${idx})" class="${isOn ? 'btn-tactical-solid' : 'btn-tactical'} px-2.5 py-1 text-[10px] rounded-sm">
+                ${isOn ? 'Desligar' : 'Ligar'}
+              </button>
+            </div>
+          `;
+        }
+
+        // H. Holster / Sling Attachments
+        let attachmentControls = '';
+        if (item.weightClass === 'light' && hasHolster) {
+          attachmentControls += `
+            <button onclick="toggleHolster(${idx})" class="px-1.5 py-0.5 font-mono text-[9px] border border-current rounded-sm no-print ${item.inHolster ? 'bg-black text-white dark:bg-white dark:text-black font-bold' : 'opacity-70'}">
+              ${item.inHolster ? '✓ No Coldre/Bainha (0 slots)' : 'Colocar no Coldre'}
+            </button>
+          `;
+        }
+        if (item.weightClass === 'heavy' && hasSling) {
+          attachmentControls += `
+            <button onclick="toggleSling(${idx})" class="px-1.5 py-0.5 font-mono text-[9px] border border-current rounded-sm no-print ${item.inSling ? 'bg-black text-white dark:bg-white dark:text-black font-bold' : 'opacity-70'}">
+              ${item.inSling ? '✓ Na Bandoleira (-1 slot)' : 'Prender na Bandoleira'}
+            </button>
+          `;
+        }
+
+        return `
+          <div class="dossier-card p-3 rounded-sm flex flex-col justify-between ${item.broken ? 'border-red-800 border-2' : ''}">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-mono text-xs font-black px-1.5 py-0.5 border border-current">${slotCost} SLOT${slotCost === 1 ? '' : 'S'}</span>
+                    <h4 class="font-bold text-sm">${item.name}</h4>
+                    ${item.damage ? `<span class="font-mono text-xs font-black underline">${item.damage}</span>` : ''}
+                  </div>
+                  ${item.range ? `<span class="block font-mono text-[10px] opacity-75 mt-0.5">Alcance: ${item.range}</span>` : ''}
+                </div>
+
+                <!-- Quantity & Delete -->
+                <div class="flex items-center gap-1 shrink-0 no-print">
+                  <button onclick="changeItemQty(${idx}, -1)" class="btn-tactical w-6 h-6 text-xs rounded-sm" title="Diminuir quantidade">-</button>
+                  <span class="font-mono text-xs font-bold px-1.5">${item.qty}x</span>
+                  <button onclick="changeItemQty(${idx}, 1)" class="btn-tactical w-6 h-6 text-xs rounded-sm" title="Aumentar quantidade">+</button>
+                  <button onclick="removeItem(${idx})" class="btn-tactical w-6 h-6 text-xs rounded-sm ml-1" title="Remover item">✕</button>
+                </div>
+              </div>
+
+              ${item.props && item.props.length ? `
+                <div class="flex flex-wrap gap-1 mt-1.5">
+                  ${item.props.map(p => `<span class="font-mono text-[9px] px-1.5 py-0.5 dossier-box rounded-sm">${p}</span>`).join('')}
+                  ${attachmentControls}
+                </div>
+              ` : (attachmentControls ? `<div class="mt-1.5">${attachmentControls}</div>` : '')}
+
+              <p class="text-[11px] opacity-80 mt-1.5 leading-snug">${item.desc || ''}</p>
+
+              ${warnings.map(w => `<div class="mt-1.5 font-mono text-[10px] font-bold text-red-700 dark:text-red-400">${w}</div>`).join('')}
+            </div>
+
+            ${interactiveControls}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
+    // 6. INTERACTION HANDLERS
+    // =========================================================================
+    function switchPage(pageNum) {
+      state.activePage = pageNum;
+      saveAndRender();
+    }
+
+    function toggleTheme() {
+      state.darkMode = !state.darkMode;
+      saveAndRender();
+    }
+
+    function updateField(field, value) {
+      state[field] = value;
+      saveToStorage();
+      if (field === 'name') {
+        document.getElementById('p2-char-name').textContent = value || 'SEM NOME';
+      }
+    }
+
+    function changeTipo(tipoId) {
+      state.tipo = tipoId;
+      state.tipoSkillChoices = { d6: [], d8: [], d10: [] };
+      const stats = getDerivedStats();
+      state.pvCurrent = stats.pvMax;
+      state.pcCurrent = stats.pcMax;
+      saveAndRender();
+      if (tipoId) showToast(`Tipo ${TIPOS[tipoId].name} aplicado. PV e PC atualizados.`);
+    }
+
+    function changeEstilo(estiloId) {
+      state.estilo = estiloId;
+      saveAndRender();
+      if (estiloId) showToast(`Estilo ${ESTILOS[estiloId].name} selecionado.`);
+    }
+
+    function changeArquetipo(archId) {
+      state.arquetipo = archId;
+      state.archAbilities = { lv1: '', lv3: '', lv7: '', lv11: '' };
+      saveAndRender();
+      if (archId) showToast(`Arquétipo ${ARQUETIPOS[archId].name} aplicado com suas 2 perícias treinadas.`);
+    }
+
+    function changeLevel(delta) {
+      const oldStats = getDerivedStats();
+      const newLv = Math.max(1, Math.min(12, state.level + delta));
+      if (newLv === state.level) return;
+      state.level = newLv;
+
+      const newStats = getDerivedStats();
+      // Adjust current PV/PC proportionally when max changes
+      const pvDiff = newStats.pvMax - oldStats.pvMax;
+      const pcDiff = newStats.pcMax - oldStats.pcMax;
+      state.pvCurrent = Math.max(0, Math.min(newStats.pvMax, state.pvCurrent + pvDiff));
+      state.pcCurrent = Math.max(0, Math.min(newStats.pcMax, state.pcCurrent + pcDiff));
+
+      saveAndRender();
+      showToast(`Sobrevivente agora está no Nível ${newLv}.`);
+    }
+
+    function toggleFreeMode() {
+      state.freeMode = !state.freeMode;
+      saveAndRender();
+    }
+
+    function setBaseAttribute(attr, die) {
+      state.baseAttributes[attr] = die;
+      const stats = getDerivedStats();
+      if (state.pvCurrent > stats.pvMax) state.pvCurrent = stats.pvMax;
+      if (state.pcCurrent > stats.pcMax) state.pcCurrent = stats.pcMax;
+      saveAndRender();
+    }
+
+    function adjustAttrDelta(attr, delta) {
+      const totalUsed = Object.values(state.attrDeltas).reduce((a, b) => a + b, 0);
+      if (delta > 0 && totalUsed >= 2) {
+        showToast('Aumento de Passo em Atributo pode ser adquirido no máximo 2 vezes.');
+        return;
+      }
+      const next = Math.max(0, (state.attrDeltas[attr] || 0) + delta);
+      state.attrDeltas[attr] = next;
+      saveAndRender();
+    }
+
+    function adjustResource(res, delta) {
+      const stats = getDerivedStats();
+      if (res === 'pv') {
+        state.pvCurrent = Math.max(0, Math.min(stats.pvMax, state.pvCurrent + delta));
+      } else if (res === 'pc') {
+        state.pcCurrent = Math.max(0, Math.min(stats.pcMax, state.pcCurrent + delta));
+      }
+      saveAndRender();
+    }
+
+    function setResource(res, val) {
+      const num = parseInt(val, 10) || 0;
+      const stats = getDerivedStats();
+      if (res === 'pv') {
+        state.pvCurrent = Math.max(0, Math.min(stats.pvMax, num));
+      } else if (res === 'pc') {
+        state.pcCurrent = Math.max(0, Math.min(stats.pcMax, num));
+      }
+      saveAndRender();
+    }
+
+    function spendPC(amount, label) {
+      if (state.pcCurrent < amount) {
+        showToast(`PC insuficiente para ${label} (necessário ${amount} PC).`);
+        return;
+      }
+      state.pcCurrent -= amount;
+      saveAndRender();
+      showToast(`${label}: -${amount} PC gastos.`);
+    }
+
+    function addStress(amount, label) {
+      for (let i = 0; i < amount; i++) {
+        if (state.stress + 1 >= 6) {
+          triggerMentalCollapse();
+          return;
+        }
+        state.stress += 1;
+      }
+      saveAndRender();
+      if (label) showToast(`${label}: +${amount} Marcador de Estresse.`);
+    }
+
+    function toggleStressPip(index) {
+      if (index === state.stress) {
+        state.stress = index - 1;
+        saveAndRender();
+        return;
+      }
+      if (index >= 6) {
+        triggerMentalCollapse();
+        return;
+      }
+      state.stress = index;
+      saveAndRender();
+    }
+
+    function triggerMentalCollapse() {
+      state.stress = 0;
+      const emptyIdx = state.permanentStress.findIndex(s => !s || s.trim() === '');
+      if (emptyIdx !== -1) {
+        state.permanentStress[emptyIdx] = '[COLAPSO MENTAL] Role 1d10 na tabela de Sequelas';
+      } else {
+        // 5th trauma!
+        state.permanentStress.push('[5ª SEQUELA] Personagem Injogável');
+      }
+      saveAndRender();
+      showToast('⚠ COLAPSO MENTAL! 6º Estresse atingido: barra zerada e +1 Sequela adicionada na Pág. 02!');
+    }
+
+    function toggleWillPip(index) {
+      if (index === state.willpower) {
+        state.willpower = index - 1;
+      } else {
+        state.willpower = index;
+      }
+      saveAndRender();
+    }
+
+    function spendWillpower(mode) {
+      if (state.willpower <= 0) {
+        showToast('Nenhum Marcador de Vontade disponível.');
+        return;
+      }
+      state.willpower -= 1;
+      if (mode === 'stress' && state.stress > 0) {
+        state.stress -= 1;
+        showToast('1 Vontade gasta: -1 Marcador de Estresse removido!');
+      } else if (mode === 'stress') {
+        showToast('1 Vontade gasta: Dado de Medo ativo removido!');
+      } else {
+        showToast('1 Vontade gasta: Refazer Teste ou Impulso de Sobrevivente ativado!');
+      }
+      saveAndRender();
+    }
+
+    function toggleCondition(condId) {
+      const idx = state.conditions.indexOf(condId);
+      if (idx === -1) {
+        state.conditions.push(condId);
+      } else {
+        state.conditions.splice(idx, 1);
+      }
+      saveAndRender();
+    }
+
+    function toggleTipoSkillChoice(skillId, tier) {
+      const tipoObj = TIPOS[state.tipo];
+      if (!tipoObj) return;
+      const maxAllowed = tipoObj.skillGrants[tier] || 0;
+
+      // Remove from other tiers first
+      ['d6', 'd8', 'd10'].forEach(t => {
+        if (t !== tier) {
+          state.tipoSkillChoices[t] = state.tipoSkillChoices[t].filter(id => id !== skillId);
+        }
+      });
+
+      const list = state.tipoSkillChoices[tier];
+      if (list.includes(skillId)) {
+        state.tipoSkillChoices[tier] = list.filter(id => id !== skillId);
+      } else {
+        if (list.length >= maxAllowed) {
+          showToast(`Seu Tipo (${tipoObj.name}) permite no máximo ${maxAllowed} perícia(s) inicial(is) em ${tier}.`);
+          return;
+        }
+        list.push(skillId);
+      }
+      saveAndRender();
+    }
+
+    function adjustSkillDelta(skillId, delta) {
+      const current = state.skillDeltas[skillId] || 0;
+      state.skillDeltas[skillId] = Math.max(-3, Math.min(4, current + delta));
+      saveAndRender();
+    }
+
+    function selectArchAbility(milestoneKey, abId) {
+      state.archAbilities[milestoneKey] = abId;
+      const stats = getDerivedStats();
+      state.pvCurrent = Math.min(stats.pvMax, state.pvCurrent);
+      state.pcCurrent = Math.min(stats.pcMax, state.pcCurrent);
+      saveAndRender();
+    }
+
+    function selectGenAbility(milestoneKey, genId) {
+      state.genAbilities[milestoneKey] = genId;
+      saveAndRender();
+    }
+
+    function setPermanentStress(idx, val) {
+      state.permanentStress[idx] = val;
+      saveAndRender();
+    }
+
+    // Rests
+    function openAlertRestModal() {
+      const bonus = hasGenAbility('recuperacao_rapida') ? 6 : 4;
+      document.getElementById('alert-rest-vitals-desc').textContent = `Recupera +${bonus} PV e +${bonus} PC.`;
+      document.getElementById('alert-rest-modal').classList.remove('hidden');
+      document.getElementById('alert-rest-modal').classList.add('flex');
+    }
+
+    function closeAlertRestModal() {
+      document.getElementById('alert-rest-modal').classList.add('hidden');
+      document.getElementById('alert-rest-modal').classList.remove('flex');
+    }
+
+    function executeAlertRest(choice) {
+      const stats = getDerivedStats();
+      if (choice === 'vitals') {
+        const bonus = hasGenAbility('recuperacao_rapida') ? 6 : 4;
+        state.pvCurrent = Math.min(stats.pvMax, state.pvCurrent + bonus);
+        state.pcCurrent = Math.min(stats.pcMax, state.pcCurrent + bonus);
+        showToast(`Descanso Alerta: +${bonus} PV e +${bonus} PC recuperados.`);
+      } else {
+        state.stress = Math.max(0, state.stress - 1);
+        showToast('Descanso Alerta: -1 Marcador de Estresse removido.');
+      }
+      closeAlertRestModal();
+      saveAndRender();
+    }
+
+    function takeSafeRest() {
+      const stats = getDerivedStats();
+      state.pvCurrent = stats.pvMax;
+      state.pcCurrent = stats.pcMax;
+      state.stress = 0;
+      state.conditions = state.conditions.filter(c => c !== 'exausto' && c !== 'hipotermia');
+      saveAndRender();
+      showToast('Descanso Seguro (8h): PV e PC restaurados ao máximo, Estresse zerado!');
+    }
+
+    // =========================================================================
+    // 7. CATALOG & INVENTORY ACTIONS
+    // =========================================================================
+    function openCatalogModal() {
+      document.getElementById('catalog-modal').classList.remove('hidden');
+      document.getElementById('catalog-modal').classList.add('flex');
+      renderCatalogItems();
+    }
+
+    function closeCatalogModal() {
+      document.getElementById('catalog-modal').classList.add('hidden');
+      document.getElementById('catalog-modal').classList.remove('flex');
+    }
+
+    function setCatalogCategory(cat) {
+      currentCatalogCat = cat;
+      document.querySelectorAll('.cat-tab').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.classList.remove('btn-tactical');
+          btn.classList.add('btn-tactical-solid');
+        } else {
+          btn.classList.remove('btn-tactical-solid');
+          btn.classList.add('btn-tactical');
+        }
+      });
+      renderCatalogItems();
+    }
+
+    function renderCatalogItems() {
+      const query = (document.getElementById('catalog-search').value || '').toLowerCase();
+      const container = document.getElementById('catalog-items-container');
+
+      const filtered = CATALOG_ITEMS.filter(item => {
+        const matchCat = item.cat === currentCatalogCat;
+        const matchSearch = !query || item.name.toLowerCase().includes(query) || (item.desc && item.desc.toLowerCase().includes(query));
+        return matchCat && matchSearch;
+      });
+
+      container.innerHTML = filtered.map(item => `
+        <div class="dossier-card p-3 rounded-sm flex flex-col justify-between gap-2">
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="font-bold text-sm">${item.name}</h4>
+              <span class="font-mono text-[10px] font-black px-1.5 py-0.5 border border-current shrink-0">
+                ${item.stackable ? `1 SLOT / ${item.stackSize} UN.` : `${item.slots} SLOT${item.slots === 1 ? '' : 'S'}`}
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-1 mt-1">
+              ${item.damage ? `<span class="font-mono text-[10px] font-bold px-1 border border-current">Dano: ${item.damage}</span>` : ''}
+              ${item.cap ? `<span class="font-mono text-[10px] font-bold px-1 border border-current">Cap: ${item.cap}</span>` : ''}
+              ${item.props.map(p => `<span class="font-mono text-[9px] px-1 dossier-box">${p}</span>`).join('')}
+            </div>
+            <p class="text-[11px] opacity-80 mt-1.5 leading-snug">${item.desc}</p>
+          </div>
+          <div class="flex justify-end gap-1.5 pt-1">
+            ${item.stackable ? `
+              <button onclick="addFromCatalog('${item.id}', 10)" class="btn-tactical-solid px-2.5 py-1 text-[10px] rounded-sm">+10 Unidades</button>
+              <button onclick="addFromCatalog('${item.id}', 1)" class="btn-tactical px-2.5 py-1 text-[10px] rounded-sm">+1 Un.</button>
+            ` : `
+              <button onclick="addFromCatalog('${item.id}', 1)" class="btn-tactical-solid px-3 py-1 text-[10px] rounded-sm">+ Adicionar à Mochila</button>
+            `}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addFromCatalog(catalogId, qtyToAdd = 1) {
+      const template = CATALOG_ITEMS.find(i => i.id === catalogId);
+      if (!template) return;
+
+      // If stackable, merge with existing stack
+      if (template.stackable) {
+        const existing = state.inventory.find(i => i.catalogId === catalogId);
+        if (existing) {
+          existing.qty += qtyToAdd;
+          saveAndRender();
+          showToast(`+${qtyToAdd} ${template.name} adicionado(s) ao estoque.`);
+          return;
+        }
+      }
+
+      const newItem = {
+        uid: Date.now() + Math.random().toString(16).slice(2),
+        catalogId: template.id,
+        cat: template.cat,
+        name: template.name,
+        damage: template.damage || null,
+        slots: template.slots,
+        range: template.range || null,
+        cap: template.cap || null,
+        ammoCurrent: template.cap || null,
+        ammoType: template.ammoType || null,
+        ammoKey: template.ammoKey || null,
+        weightClass: template.weightClass || null,
+        reliable: !!template.reliable,
+        reqCorpo: template.reqCorpo || null,
+        hasBurst: !!template.hasBurst,
+        isChainsaw: !!template.isChainsaw,
+        isExplosive: !!template.isExplosive,
+        guardaBonus: template.guardaBonus || 0,
+        ppPerm: template.ppPerm || 0,
+        ppTempMax: template.ppTempMax || 0,
+        ppTempCurrent: template.ppTempMax || 0,
+        equipped: false,
+        maxUses: template.maxUses || null,
+        usesCurrent: template.maxUses || null,
+        isMedkit: !!template.isMedkit,
+        isAdrenaline: !!template.isAdrenaline,
+        isConsumable: !!template.isConsumable,
+        isFood: !!template.isFood,
+        isWater: !!template.isWater,
+        hasToggle: !!template.hasToggle,
+        toggleLabels: template.toggleLabels || null,
+        toggledOn: false,
+        stackable: !!template.stackable,
+        stackSize: template.stackSize || 10,
+        props: [...(template.props || [])],
+        desc: template.desc || '',
+        qty: qtyToAdd,
+        broken: false,
+        inHolster: false,
+        inSling: false
+      };
+
+      state.inventory.push(newItem);
+      saveAndRender();
+      showToast(`${template.name} adicionado ao inventário!`);
+    }
+
+    function openCustomItemModal() {
+      document.getElementById('custom-item-modal').classList.remove('hidden');
+      document.getElementById('custom-item-modal').classList.add('flex');
+    }
+
+    function closeCustomItemModal() {
+      document.getElementById('custom-item-modal').classList.add('hidden');
+      document.getElementById('custom-item-modal').classList.remove('flex');
+    }
+
+    function addCustomItem() {
+      const name = document.getElementById('custom-name').value.trim();
+      if (!name) return;
+      const qty = Math.max(1, parseInt(document.getElementById('custom-qty').value, 10) || 1);
+      const slots = Math.max(0, parseInt(document.getElementById('custom-slots').value, 10) || 0);
+      const stackable = document.getElementById('custom-stackable').checked;
+      const desc = document.getElementById('custom-desc').value.trim();
+
+      state.inventory.push({
+        uid: Date.now().toString(),
+        catalogId: 'custom',
+        cat: 'custom',
+        name,
+        slots,
+        qty,
+        stackable,
+        stackSize: 10,
+        props: stackable ? ['Agrupável (10 un./slot)'] : [],
+        desc
+      });
+
+      document.getElementById('custom-name').value = '';
+      document.getElementById('custom-desc').value = '';
+      closeCustomItemModal();
+      saveAndRender();
+      showToast(`Item "${name}" adicionado.`);
+    }
+
+    function changeItemQty(idx, delta) {
+      const item = state.inventory[idx];
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) {
+        state.inventory.splice(idx, 1);
+      }
+      saveAndRender();
+    }
+
+    function removeItem(idx) {
+      const removed = state.inventory.splice(idx, 1)[0];
+      saveAndRender();
+      if (removed) showToast(`${removed.name} removido.`);
+    }
+
+    // Weapon Fire & Reload Mechanics
+    function fireWeapon(idx, shots) {
+      const weapon = state.inventory[idx];
+      if (!weapon || weapon.ammoCurrent < shots) return;
+      weapon.ammoCurrent -= shots;
+      saveAndRender();
+      if (shots > 1) {
+        showToast(`${weapon.name}: Rajada disparada (-${shots} munições)! Use RA no dano.`);
+      } else {
+        showToast(`${weapon.name}: Disparo realizado (${weapon.ammoCurrent}/${weapon.cap} restantes).`);
+      }
+    }
+
+    function reloadWeapon(idx) {
+      const weapon = state.inventory[idx];
+      if (!weapon) return;
+      const needed = weapon.cap - weapon.ammoCurrent;
+      if (needed <= 0) return;
+
+      const ammoItemIdx = state.inventory.findIndex(i => i.ammoKey === weapon.ammoType && i.qty > 0);
+      if (ammoItemIdx === -1) {
+        const ammoNames = {
+          municao_leve: 'Munições Leves',
+          municao_pesada: 'Munições Pesadas',
+          flechas: 'Flechas / Virotes',
+          pedras: 'Pedras / Esferas'
+        };
+        showToast(`⚠ Sem ${ammoNames[weapon.ammoType] || 'munição'} no inventário para recarregar!`);
+        return;
+      }
+
+      const ammoItem = state.inventory[ammoItemIdx];
+      const loaded = Math.min(needed, ammoItem.qty);
+      weapon.ammoCurrent += loaded;
+      ammoItem.qty -= loaded;
+      if (ammoItem.qty <= 0) {
+        state.inventory.splice(ammoItemIdx, 1);
+      }
+      saveAndRender();
+      showToast(`${weapon.name} recarregada (+${loaded} projéteis gastos do estoque).`);
+    }
+
+    function toggleBroken(idx) {
+      const item = state.inventory[idx];
+      if (!item) return;
+      item.broken = !item.broken;
+      saveAndRender();
+      showToast(item.broken ? `${item.name} marcada como Travada / Quebrada.` : `${item.name} destravada / consertada!`);
+    }
+
+    function useChainsawFuel(idx) {
+      const fuelIdx = state.inventory.findIndex(i => i.ammoKey === 'combustivel' && i.qty > 0);
+      if (fuelIdx === -1) {
+        showToast('⚠ Sem Combustível no inventário para ligar a Serra Elétrica!');
+        return;
+      }
+      state.inventory[fuelIdx].qty -= 1;
+      if (state.inventory[fuelIdx].qty <= 0) {
+        state.inventory.splice(fuelIdx, 1);
+      }
+      saveAndRender();
+      showToast('Serra Elétrica ligada! -1 unidade de combustível consumida (Barulho extremo!).');
+    }
+
+    function toggleEquipArmor(idx) {
+      const armor = state.inventory[idx];
+      if (!armor) return;
+      armor.equipped = !armor.equipped;
+      saveAndRender();
+      showToast(armor.equipped ? `${armor.name} equipada.` : `${armor.name} desquipada.`);
+    }
+
+    function adjustVestPP(idx, delta) {
+      const vest = state.inventory[idx];
+      if (!vest) return;
+      vest.ppTempCurrent = Math.max(0, Math.min(vest.ppTempMax, (vest.ppTempCurrent || 0) + delta));
+      saveAndRender();
+      showToast(`Colete Policial: ${vest.ppTempCurrent}/${vest.ppTempMax} PP.`);
+    }
+
+    function useMedkit(idx) {
+      const kit = state.inventory[idx];
+      if (!kit) return;
+      kit.usesCurrent = (kit.usesCurrent ?? kit.maxUses) - 1;
+      if (kit.usesCurrent <= 0) {
+        if (kit.qty > 1) {
+          kit.qty -= 1;
+          kit.usesCurrent = kit.maxUses;
+        } else {
+          state.inventory.splice(idx, 1);
+        }
+        showToast('Kit de Primeiros Socorros utilizado (último uso esgotado!).');
+      } else {
+        showToast(`Kit de Primeiros Socorros usado (${kit.usesCurrent}/${kit.maxUses} usos restantes).`);
+      }
+      saveAndRender();
+    }
+
+    function useAdrenaline(idx) {
+      if (state.pvCurrent <= 0) {
+        showToast('⚠ Injeção de Adrenalina não surte efeito em alvos com 0 PV!');
+        return;
+      }
+      const stats = getDerivedStats();
+      state.pvCurrent = Math.min(stats.pvMax, state.pvCurrent + 4);
+      state.conditions = state.conditions.filter(c => !['exausto', 'inconsciente', 'paralisado'].includes(c));
+      changeItemQty(idx, -1);
+      showToast('💉 Adrenalina aplicada! +4 PV e condições Exausto/Inconsciente/Paralisado removidas.');
+    }
+
+    function consumeItemUnit(idx) {
+      const item = state.inventory[idx];
+      if (!item) return;
+      if (item.isFood) {
+        state.conditions = state.conditions.filter(c => c !== 'fome');
+        showToast('Ração de comida consumida (-1). Penalidade de Fome removida.');
+      } else if (item.isWater) {
+        state.conditions = state.conditions.filter(c => c !== 'sede');
+        showToast('Água potável consumida (-1). Penalidade de Sede removida.');
+      } else if (item.isExplosive) {
+        showToast(`💥 ${item.name} utilizado (${item.damage} em ${item.props.find(p => p.includes('Área')) || 'área'})!`);
+      } else {
+        showToast(`${item.name} consumido (-1).`);
+      }
+      changeItemQty(idx, -1);
+    }
+
+    function toggleItemSwitch(idx) {
+      const item = state.inventory[idx];
+      if (!item) return;
+      item.toggledOn = !item.toggledOn;
+      saveAndRender();
+    }
+
+    function toggleHolster(idx) {
+      const target = state.inventory[idx];
+      if (!target) return;
+      const next = !target.inHolster;
+      // Only 1 weapon per holster owned
+      const holsterCount = state.inventory.filter(i => i.catalogId === 'coldre_tatico').reduce((s, i) => s + i.qty, 0);
+      const currentlyHolstered = state.inventory.filter(i => i.inHolster).length;
+      if (next && currentlyHolstered >= holsterCount) {
+        showToast(`Você possui ${holsterCount} Coldre/Bainha Tática (1 arma leve por coldre).`);
+        return;
+      }
+      target.inHolster = next;
+      saveAndRender();
+    }
+
+    function toggleSling(idx) {
+      const target = state.inventory[idx];
+      if (!target) return;
+      const next = !target.inSling;
+      const slingCount = state.inventory.filter(i => i.catalogId === 'bandoleira_tatica').reduce((s, i) => s + i.qty, 0);
+      const currentlySlung = state.inventory.filter(i => i.inSling).length;
+      if (next && currentlySlung >= slingCount) {
+        showToast(`Você possui ${slingCount} Bandoleira Tática (1 arma pesada por bandoleira).`);
+        return;
+      }
+      target.inSling = next;
+      saveAndRender();
+    }
+
+    // =========================================================================
+    // 8. PERSISTENCE, EXAMPLE CHARACTER & MODALS
+    // =========================================================================
+    function saveToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        const ind = document.getElementById('save-indicator');
+        ind.textContent = '● Salvo localmente';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function saveAndRender() {
+      saveToStorage();
+      renderAll();
+    }
+
+    function loadFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state = { ...getDefaultState(), ...parsed };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function loadRicardoExample() {
+      state = getDefaultState();
+      state.name = 'Ricardo Gomes';
+      state.concept = 'Policial do interior de Minas Gerais, líder natural que sempre toma a dianteira e age rapidamente sob pressão.';
+      state.tipo = 'inspirador';
+      state.estilo = 'pratico';
+      state.arquetipo = 'policial';
+      state.level = 1;
+      state.baseAttributes = { corpo: 'd8', intelecto: 'd6', alma: 'd8' }; // Inspirador sobe ALMA para d10
+      state.tipoSkillChoices = {
+        d6: ['atletismo', 'investigacao'],
+        d8: ['persuasao', 'percepcao'],
+        d10: []
+      };
+      state.archAbilities.lv1 = 'voz_comando';
+      state.pvCurrent = 14;
+      state.pcCurrent = 15;
+
+      // Equipamento típico de policial para demonstração
+      addFromCatalog('revolver', 1);
+      addFromCatalog('municao_leve', 18);
+      addFromCatalog('coldre_tatico', 1);
+      addFromCatalog('colete_policial', 1);
+      addFromCatalog('lanterna_tatica', 1);
+      addFromCatalog('racao_comida', 3);
+      addFromCatalog('agua_potavel', 3);
+
+      // Put revolver in holster and equip vest
+      const rev = state.inventory.find(i => i.catalogId === 'revolver');
+      if (rev) rev.inHolster = true;
+      const vest = state.inventory.find(i => i.catalogId === 'colete_policial');
+      if (vest) vest.equipped = true;
+
+      saveAndRender();
+      showToast('Exemplo oficial carregado: Ricardo Gomes (Policial, Inspirador, Prático, Nv. 1)!');
+    }
+
+    function exportJSON() {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(state, null, 2));
+      const dl = document.createElement('a');
+      const fileName = (state.name || 'sobrevivente_declinio').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json';
+      dl.setAttribute('href', dataStr);
+      dl.setAttribute('download', fileName);
+      document.body.appendChild(dl);
+      dl.click();
+      dl.remove();
+      showToast(`Ficha exportada como ${fileName}`);
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          state = { ...getDefaultState(), ...imported };
+          saveAndRender();
+          showToast(`Ficha de "${state.name || 'Sobrevivente'}" importada com sucesso!`);
+        } catch (err) {
+          showToast('Erro ao importar JSON: arquivo inválido.');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function openConfirmReset() {
+      document.getElementById('confirm-reset-modal').classList.remove('hidden');
+      document.getElementById('confirm-reset-modal').classList.add('flex');
+    }
+
+    function closeConfirmReset() {
+      document.getElementById('confirm-reset-modal').classList.add('hidden');
+      document.getElementById('confirm-reset-modal').classList.remove('flex');
+    }
+
+    function resetCharacter() {
+      const keepDark = state.darkMode;
+      state = getDefaultState();
+      state.darkMode = keepDark;
+      closeConfirmReset();
+      saveAndRender();
+      showToast('Nova ficha em branco criada.');
+    }
+
+    function openRulesModal() {
+      document.getElementById('rules-modal').classList.remove('hidden');
+      document.getElementById('rules-modal').classList.add('flex');
+    }
+
+    function closeRulesModal() {
+      document.getElementById('rules-modal').classList.add('hidden');
+      document.getElementById('rules-modal').classList.remove('flex');
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'sheet-container px-3 py-2 text-xs font-mono font-bold shadow-lg transition-opacity duration-300';
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

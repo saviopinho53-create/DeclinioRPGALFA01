@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DECLÍNIO: RPG // Ficha de Sobrevivente (ALFA 0.1)</title>
+  <meta name="theme-color" content="#111111" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>DECLÍNIO: RPG // Sobreviventes (ALFA 0.1)</title>
+  <link rel="manifest" href="./manifest.json" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,13 +19,6 @@
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            paper: '#f6f5f0',
-            ink: '#111111',
-            muted: '#525252',
-            borderink: '#1a1a1a',
-            accent: '#991b1b'
           }
         }
       }
@@ -36,7 +33,6 @@
       --text-muted: #525252;
       --border-main: #111111;
       --border-sub: #a3a3a3;
-      --accent-red: #991b1b;
     }
 
     body.dark-mode {
@@ -47,7 +43,6 @@
       --text-muted: #a3a3a3;
       --border-main: #e5e5e5;
       --border-sub: #404040;
-      --accent-red: #ef4444;
     }
 
     body {
@@ -152,7 +147,6 @@
       color: var(--bg-sheet);
     }
 
-    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: var(--bg-panel); }
     ::-webkit-scrollbar-thumb { background: var(--border-sub); border: 1px solid var(--border-main); }
@@ -187,464 +181,571 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none no-print"></div>
 
-  <!-- TOP ACTION BAR (NO PRINT) -->
-  <header class="max-w-6xl mx-auto mb-4 no-print">
-    <div class="sheet-container p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+  <!-- ===================================================================== -->
+  <!-- VIEW 1: BIBLIOTECA DE PERSONAGENS ("MEUS SOBREVIVENTES")               -->
+  <!-- ===================================================================== -->
+  <div id="library-view" class="max-w-5xl mx-auto">
+    <header class="sheet-container p-4 sm:p-5 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <div class="flex items-center gap-2">
           <span class="px-2 py-0.5 text-[11px] font-mono font-extrabold tracking-widest uppercase border border-current">ALFA 0.1</span>
-          <h1 class="text-xl sm:text-2xl font-black tracking-tight uppercase">DECLÍNIO: RPG</h1>
+          <h1 class="text-2xl sm:text-3xl font-black tracking-tight uppercase">DECLÍNIO: RPG</h1>
         </div>
-        <p class="text-xs italic opacity-75 mt-0.5">"Cada bala importa. Cada refeição conta. Cada ferimento pode ser o último."</p>
+        <p class="text-xs italic opacity-75 mt-1">"Cada bala importa. Cada refeição conta. Cada ferimento pode ser o último."</p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <button onclick="loadRicardoExample()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm" title="Carregar exemplo oficial do manual">
-          Exemplo: Ricardo
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="pwa-install-btn" onclick="triggerPWAInstall()" class="hidden btn-tactical-solid px-3 py-2 text-xs rounded-sm">
+          📲 Instalar App
         </button>
-        <button onclick="openConfirmReset()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
-          Nova Ficha
-        </button>
-        <button onclick="exportJSON()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
-          Exportar JSON
-        </button>
-        <label class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm cursor-pointer">
-          Importar JSON
-          <input type="file" id="import-file" accept=".json" class="hidden" onchange="importJSON(event)" />
-        </label>
-        <button onclick="window.print()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
-          Imprimir
-        </button>
-        <button onclick="toggleTheme()" id="theme-toggle-btn" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm" title="Alternar Papel / Modo Escuro">
+        <button onclick="toggleTheme()" class="btn-tactical px-3 py-2 text-xs rounded-sm" title="Alternar Papel / Modo Escuro">
           🌓 Tema
         </button>
       </div>
-    </div>
+    </header>
 
-    <!-- PAGE NAVIGATION TABS -->
-    <div class="flex flex-wrap items-center justify-between gap-2 mt-3">
-      <div class="flex gap-2">
-        <button id="tab-p1" onclick="switchPage(1)" class="tab-btn active btn-tactical px-4 py-2 text-xs sm:text-sm rounded-sm">
-          PÁG. 01 // REGISTRO & PERÍCIAS
-        </button>
-        <button id="tab-p2" onclick="switchPage(2)" class="tab-btn btn-tactical px-4 py-2 text-xs sm:text-sm rounded-sm">
-          PÁG. 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO
-        </button>
-      </div>
-
-      <div class="flex items-center gap-2 text-xs font-mono">
-        <span id="save-indicator" class="opacity-70">● Salvo localmente</span>
-        <button onclick="openRulesModal()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">
-          📖 Consulta Rápida
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- MAIN SHEET WRAPPER -->
-  <main class="max-w-6xl mx-auto">
-
-    <!-- ===================================================================== -->
-    <!-- PÁGINA 01 // REGISTRO                                                 -->
-    <!-- ===================================================================== -->
-    <section id="page-1" class="sheet-container p-4 sm:p-6 print-show-all">
-      <!-- Dossier Header -->
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-current pb-2 mb-4 gap-2">
-        <div>
-          <span class="font-mono text-xs font-bold tracking-widest uppercase opacity-75">DECLÍNIO: RPG // FICHA DE SOBREVIVENTE (PÁGINA 1 DE 2)</span>
-          <h2 class="text-2xl sm:text-3xl font-black tracking-tight uppercase">PÁG. 01 // REGISTRO</h2>
-        </div>
-        <p class="font-mono text-xs italic opacity-80">"Cada bala importa. Cada refeição conta. Cada ferimento pode ser o último."</p>
-      </div>
-
-      <!-- IDENTITY & BUILD GRID -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
-        <!-- Name & Concept -->
-        <div class="lg:col-span-5 dossier-box p-3 rounded-sm flex flex-col gap-3">
-          <div>
-            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">NOME DO SOBREVIVENTE</label>
-            <input type="text" id="char-name" oninput="updateField('name', this.value)" placeholder="Ex: Ricardo Gomes" class="dossier-input w-full px-2.5 py-1.5 text-base font-bold rounded-sm" />
-          </div>
-          <div class="flex-1 flex flex-col">
-            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">CONCEITO & HISTÓRICO</label>
-            <textarea id="char-concept" oninput="updateField('concept', this.value)" rows="3" placeholder="Quem você era antes do colapso? Como lida com o mundo atual e o estresse?" class="dossier-input w-full px-2.5 py-1.5 text-xs leading-relaxed rounded-sm flex-1"></textarea>
-          </div>
+    <!-- Library Toolbar -->
+    <div class="sheet-container p-4 sm:p-5">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b-2 border-current pb-4 mb-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <h2 class="text-xl sm:text-2xl font-black uppercase tracking-tight">Meus Sobreviventes</h2>
+          <span id="library-count-badge" class="font-mono text-xs font-bold px-2.5 py-1 dossier-box rounded-sm">0 fichas</span>
+          <button onclick="createNewCharacterInLibrary()" class="btn-tactical-solid px-3.5 py-2 text-xs rounded-sm">
+            + Novo Sobrevivente
+          </button>
         </div>
 
-        <!-- Tipo, Estilo, Arquétipo, Nível -->
-        <div class="lg:col-span-7 dossier-box p-3 rounded-sm grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">TIPO (Aumento de Passo & Recursos)</label>
-            <select id="char-tipo" onchange="changeTipo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
-              <option value="">-- Selecione o Tipo --</option>
-              <option value="robusto">Robusto (+1 CORPO | PV d+8 | PC d+3)</option>
-              <option value="esperto">Esperto (+1 INTELECTO | PV d+4 | PC d+4)</option>
-              <option value="inspirador">Inspirador (+1 ALMA | PV d+6 | PC d+5)</option>
-            </select>
-            <p id="tipo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Escolha um Tipo para aplicar bônus de atributo, PV, PC e perícias iniciais.</p>
-          </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="createRicardoInLibrary()" class="btn-tactical px-3 py-2 text-xs rounded-sm" title="Adicionar o policial exemplo oficial do livro">
+            + Exemplo: Ricardo
+          </button>
+          <button onclick="exportAllJSON()" class="btn-tactical px-3 py-2 text-xs rounded-sm">
+            Exportar Todos
+          </button>
+          <label class="btn-tactical px-3 py-2 text-xs rounded-sm cursor-pointer">
+            Importar JSON
+            <input type="file" accept=".json" class="hidden" onchange="importJSONToLibrary(event)" />
+          </label>
+        </div>
+      </div>
 
-          <div>
-            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">ESTILO (Iniciativa & Tática)</label>
-            <select id="char-estilo" onchange="changeEstilo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
-              <option value="">-- Selecione o Estilo --</option>
-              <option value="pratico">Prático (Age Primeiro na Iniciativa)</option>
-              <option value="tatico">Tático (Age Por Último na Iniciativa)</option>
-              <option value="pragmatico">Pragmático (Escolhe Quando Agir)</option>
-            </select>
-            <p id="estilo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Define sua ordem natural na iniciativa e habilidades de Nível 1 e 6.</p>
-          </div>
+      <p class="text-xs opacity-75 mb-4">
+        "Exportar Todos" salva a biblioteca inteira num único arquivo de backup. Para exportar apenas um sobrevivente, use o botão <b>↓</b> no card dele. "Importar JSON" aceita arquivos com 1 ou vários personagens.
+      </p>
 
-          <div>
-            <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">ARQUÉTIPO (Ocupação Pré-Colapso)</label>
-            <select id="char-arquetipo" onchange="changeArquetipo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
-              <option value="">-- Selecione um dos 20 Arquétipos --</option>
-            </select>
-            <p id="arquetipo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Concede 2 perícias treinadas (d8 e d6) e habilidades nos níveis 1, 3, 7 e 11.</p>
-          </div>
+      <!-- Character Cards List -->
+      <div id="library-list" class="space-y-3">
+        <!-- Rendered by JS -->
+      </div>
 
+      <div id="library-empty" class="hidden text-center py-12 dossier-box rounded-sm p-6">
+        <p class="font-mono text-sm font-bold uppercase mb-2">Nenhum sobrevivente registrado ainda</p>
+        <p class="text-xs opacity-75 mb-4">Crie uma ficha do zero ou carregue o exemplo oficial Ricardo Gomes para explorar o sistema.</p>
+        <div class="flex flex-wrap justify-center gap-2">
+          <button onclick="createNewCharacterInLibrary()" class="btn-tactical-solid px-4 py-2 text-xs rounded-sm">
+            + Criar Primeiro Sobrevivente
+          </button>
+          <button onclick="createRicardoInLibrary()" class="btn-tactical px-4 py-2 text-xs rounded-sm">
+            Carregar Exemplo: Ricardo Gomes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 2: EDITOR DA FICHA DE SOBREVIVENTE                               -->
+  <!-- ===================================================================== -->
+  <div id="sheet-view" class="hidden">
+    <!-- TOP ACTION BAR (NO PRINT) -->
+    <header class="max-w-6xl mx-auto mb-4 no-print">
+      <div class="sheet-container p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <button onclick="returnToLibrary()" class="btn-tactical-solid px-3 py-2 text-xs rounded-sm shrink-0">
+            ← Meus Sobreviventes
+          </button>
           <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="font-mono text-[11px] font-bold uppercase tracking-wider">NÍVEL (1 A 12)</label>
-              <span id="level-milestone-badge" class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">NÍVEL INICIAL</span>
-            </div>
             <div class="flex items-center gap-2">
-              <button onclick="changeLevel(-1)" class="btn-tactical w-9 h-9 text-base rounded-sm no-print">-</button>
-              <div id="char-level-display" class="dossier-input flex-1 h-9 flex items-center justify-center font-mono text-lg font-black rounded-sm">1</div>
-              <button onclick="changeLevel(1)" class="btn-tactical w-9 h-9 text-base rounded-sm no-print">+</button>
+              <span class="px-1.5 py-0.5 text-[10px] font-mono font-extrabold uppercase border border-current">ALFA 0.1</span>
+              <h1 class="text-lg sm:text-xl font-black tracking-tight uppercase">DECLÍNIO: RPG</h1>
             </div>
-            <p id="level-next-hint" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Nv 2: +1 Habilidade Geral</p>
+            <p class="text-[11px] italic opacity-75 hidden sm:block">"Cada bala importa. Cada refeição conta. Cada ferimento pode ser o último."</p>
           </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <button onclick="exportCurrentJSON()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
+            Exportar JSON
+          </button>
+          <button onclick="window.print()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
+            Imprimir
+          </button>
+          <button onclick="toggleTheme()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm" title="Alternar Papel / Modo Escuro">
+            🌓 Tema
+          </button>
         </div>
       </div>
 
-      <!-- ATTRIBUTES, VITALS & STRESS/WILLPOWER -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
-        
-        <!-- ATRIBUTOS (4 cols) -->
-        <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between border-b border-current pb-1.5 mb-2">
-              <h3 class="font-mono text-sm font-black uppercase tracking-wider">ATRIBUTOS</h3>
-              <button onclick="toggleFreeMode()" id="free-mode-btn" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print" title="Alterna entre distribuição oficial [d8, d8, d6] + Tipo ou edição livre">
-                Modo: Oficial
-              </button>
-            </div>
-            <p id="attr-helper-text" class="text-[11px] font-mono opacity-80 mb-3">
-              Base: distribua <b>d8, d8, d6</b>. O Tipo aplica +1 passo automático.
-            </p>
-
-            <div class="space-y-2.5" id="attributes-container">
-              <!-- Rendered by JS -->
-            </div>
-          </div>
-
-          <div class="mt-3 pt-2 border-t border-dashed border-current flex justify-between text-[10px] font-mono opacity-75">
-            <span>d4: Nenhuma</span>
-            <span>d6: Básica</span>
-            <span>d8: Aptidão</span>
-            <span>d10: Acima</span>
-            <span>d12: Ápice</span>
-          </div>
+      <!-- PAGE NAVIGATION TABS -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mt-3">
+        <div class="flex gap-2">
+          <button id="tab-p1" onclick="switchPage(1)" class="tab-btn active btn-tactical px-4 py-2 text-xs sm:text-sm rounded-sm">
+            PÁG. 01 // REGISTRO & PERÍCIAS
+          </button>
+          <button id="tab-p2" onclick="switchPage(2)" class="tab-btn btn-tactical px-4 py-2 text-xs sm:text-sm rounded-sm">
+            PÁG. 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO
+          </button>
         </div>
 
-        <!-- PV, PC, GUARDA, DESLOCAMENTO, PP (4 cols) -->
-        <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between gap-3">
-          <!-- PV -->
-          <div class="dossier-card p-2.5 rounded-sm">
-            <div class="flex items-center justify-between mb-1">
-              <span class="font-mono text-xs font-black uppercase">PONTOS DE VIDA (PV)</span>
-              <span id="pv-formula-hint" class="font-mono text-[10px] opacity-70">Max(CORPO) + Tipo</span>
-            </div>
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-1 no-print">
-                <button onclick="adjustResource('pv', -5)" class="btn-tactical px-2 py-1 text-xs rounded-sm">-5</button>
-                <button onclick="adjustResource('pv', -1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">-1</button>
-              </div>
-              <div class="flex items-baseline gap-1 font-mono">
-                <input type="number" id="pv-current" onchange="setResource('pv', this.value)" class="dossier-input w-14 text-center text-xl font-black py-0.5 rounded-sm" />
-                <span class="text-lg font-bold">/</span>
-                <span id="pv-max" class="text-xl font-black">10</span>
-              </div>
-              <div class="flex items-center gap-1 no-print">
-                <button onclick="adjustResource('pv', 1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">+1</button>
-                <button onclick="adjustResource('pv', 5)" class="btn-tactical px-2 py-1 text-xs rounded-sm">+5</button>
-              </div>
-            </div>
-            <div id="zero-pv-warning" class="hidden mt-1.5 p-1.5 bg-red-800 text-white font-mono text-[10px] font-bold uppercase text-center rounded-sm">
-              ⚠ 0 PV: MORRENDO & INCONSCIENTE (Sobrevive 3 rodadas | DT Medicina: 12 + Excedente)
-            </div>
-          </div>
+        <div class="flex items-center gap-2 text-xs font-mono">
+          <span id="save-indicator" class="opacity-70">● Salvo na biblioteca</span>
+          <button onclick="openRulesModal()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">
+            📖 Consulta Rápida
+          </button>
+        </div>
+      </div>
+    </header>
 
-          <!-- PC -->
-          <div class="dossier-card p-2.5 rounded-sm">
-            <div class="flex items-center justify-between mb-1">
-              <span class="font-mono text-xs font-black uppercase">PONTOS DE CONCENTRAÇÃO (PC)</span>
-              <span id="pc-formula-hint" class="font-mono text-[10px] opacity-70">Max(ALMA) + Tipo</span>
-            </div>
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-1 no-print">
-                <button onclick="adjustResource('pc', -3)" class="btn-tactical px-2 py-1 text-xs rounded-sm">-3</button>
-                <button onclick="adjustResource('pc', -1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">-1</button>
-              </div>
-              <div class="flex items-baseline gap-1 font-mono">
-                <input type="number" id="pc-current" onchange="setResource('pc', this.value)" class="dossier-input w-14 text-center text-xl font-black py-0.5 rounded-sm" />
-                <span class="text-lg font-bold">/</span>
-                <span id="pc-max" class="text-xl font-black">10</span>
-              </div>
-              <div class="flex items-center gap-1 no-print">
-                <button onclick="adjustResource('pc', 1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">+1</button>
-                <button onclick="adjustResource('pc', 3)" class="btn-tactical px-2 py-1 text-xs rounded-sm">+3</button>
-              </div>
-            </div>
-          </div>
+    <!-- MAIN SHEET WRAPPER -->
+    <main class="max-w-6xl mx-auto">
 
-          <!-- GUARDA, PP & DESLOCAMENTO -->
-          <div class="grid grid-cols-3 gap-2">
-            <div class="dossier-card p-2 text-center rounded-sm">
-              <span class="block font-mono text-[10px] font-bold uppercase opacity-75">GUARDA</span>
-              <span id="stat-guarda" class="block font-mono text-2xl font-black mt-0.5">7</span>
-              <span id="guarda-breakdown" class="block font-mono text-[9px] opacity-70 truncate">Base 7</span>
-            </div>
-            <div class="dossier-card p-2 text-center rounded-sm">
-              <span class="block font-mono text-[10px] font-bold uppercase opacity-75">PROTEÇÃO (PP)</span>
-              <span id="stat-pp" class="block font-mono text-2xl font-black mt-0.5">0</span>
-              <span id="pp-breakdown" class="block font-mono text-[9px] opacity-70 truncate">Perm + Temp</span>
-            </div>
-            <div class="dossier-card p-2 text-center rounded-sm">
-              <span class="block font-mono text-[10px] font-bold uppercase opacity-75">DESLOC.</span>
-              <span id="stat-speed" class="block font-mono text-2xl font-black mt-0.5">9m</span>
-              <span id="speed-squares" class="block font-mono text-[9px] opacity-70">6 quad.</span>
-            </div>
+      <!-- =================================================================== -->
+      <!-- PÁGINA 01 // REGISTRO                                               -->
+      <!-- =================================================================== -->
+      <section id="page-1" class="sheet-container p-4 sm:p-6 print-show-all">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-current pb-2 mb-4 gap-2">
+          <div>
+            <span class="font-mono text-xs font-bold tracking-widest uppercase opacity-75">DECLÍNIO: RPG // FICHA DE SOBREVIVENTE (PÁGINA 1 DE 2)</span>
+            <h2 class="text-2xl sm:text-3xl font-black tracking-tight uppercase">PÁG. 01 // REGISTRO</h2>
           </div>
+          <p class="font-mono text-xs italic opacity-80">"Cada bala importa. Cada refeição conta. Cada ferimento pode ser o último."</p>
         </div>
 
-        <!-- ESTRESSE (6) / VONTADE (3) & DESCANSOS (4 cols) -->
-        <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between gap-2.5">
-          <div>
-            <div class="flex items-center justify-between border-b border-current pb-1 mb-2">
-              <h3 class="font-mono text-xs font-black uppercase">ESTRESSE (6) & VONTADE (<span id="will-max-label">3</span>)</h3>
-              <span class="font-mono text-[10px] opacity-75">6º Estresse = Colapso</span>
+        <!-- IDENTITY & BUILD GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
+          <!-- Name & Concept -->
+          <div class="lg:col-span-5 dossier-box p-3 rounded-sm flex flex-col gap-3">
+            <div>
+              <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">NOME DO SOBREVIVENTE</label>
+              <input type="text" id="char-name" oninput="updateField('name', this.value)" placeholder="Ex: Ricardo Gomes" class="dossier-input w-full px-2.5 py-1.5 text-base font-bold rounded-sm" />
+            </div>
+            <div class="flex-1 flex flex-col">
+              <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">CONCEITO & HISTÓRICO</label>
+              <textarea id="char-concept" oninput="updateField('concept', this.value)" rows="3" placeholder="Quem você era antes do colapso? Como lida com o mundo atual e o estresse?" class="dossier-input w-full px-2.5 py-1.5 text-xs leading-relaxed rounded-sm flex-1"></textarea>
+            </div>
+          </div>
+
+          <!-- Tipo, Estilo, Arquétipo, Nível -->
+          <div class="lg:col-span-7 dossier-box p-3 rounded-sm grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">TIPO (Aumento de Passo & Recursos)</label>
+              <select id="char-tipo" onchange="changeTipo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
+                <option value="">-- Selecione o Tipo --</option>
+                <option value="robusto">Robusto (+1 CORPO | PV d+8 | PC d+3)</option>
+                <option value="esperto">Esperto (+1 INTELECTO | PV d+4 | PC d+4)</option>
+                <option value="inspirador">Inspirador (+1 ALMA | PV d+6 | PC d+5)</option>
+              </select>
+              <p id="tipo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Escolha um Tipo para aplicar bônus de atributo, PV, PC e perícias iniciais.</p>
             </div>
 
-            <!-- Stress Pips -->
-            <div class="mb-2.5">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-mono text-[11px] font-bold uppercase text-red-700 dark:text-red-400">MARCADORES DE ESTRESSE</span>
-                <span id="stress-count-label" class="font-mono text-xs font-bold">0 / 6</span>
-              </div>
-              <div class="flex items-center gap-1.5" id="stress-pips-container">
-                <!-- 6 pips -->
-              </div>
+            <div>
+              <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">ESTILO (Iniciativa & Tática)</label>
+              <select id="char-estilo" onchange="changeEstilo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
+                <option value="">-- Selecione o Estilo --</option>
+                <option value="pratico">Prático (Age Primeiro na Iniciativa)</option>
+                <option value="tatico">Tático (Age Por Último na Iniciativa)</option>
+                <option value="pragmatico">Pragmático (Escolhe Quando Agir)</option>
+              </select>
+              <p id="estilo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Define sua ordem natural na iniciativa e habilidades de Nível 1 e 6.</p>
             </div>
 
-            <!-- Willpower Pips -->
             <div>
               <div class="flex items-center justify-between mb-1">
-                <span class="font-mono text-[11px] font-bold uppercase">MARCADORES DE VONTADE</span>
-                <span id="will-count-label" class="font-mono text-xs font-bold">0 / 3</span>
+                <label class="font-mono text-[11px] font-bold uppercase tracking-wider">ARQUÉTIPO (Ocupação)</label>
+                <button id="btn-open-arch-modal" onclick="openAbilityModal('arch', 'lv1')" class="hidden btn-tactical px-1.5 py-0.5 text-[9px] rounded-sm no-print">
+                  Escolher Hab.
+                </button>
+              </div>
+              <select id="char-arquetipo" onchange="changeArquetipo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
+                <option value="">-- Selecione um dos 20 Arquétipos --</option>
+              </select>
+              <p id="arquetipo-summary" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Concede 2 perícias treinadas (d8 e d6) e habilidades nos níveis 1, 3, 7 e 11.</p>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-mono text-[11px] font-bold uppercase tracking-wider">NÍVEL (1 A 12)</label>
+                <span id="level-milestone-badge" class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">NÍVEL INICIAL</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="changeLevel(-1)" class="btn-tactical w-9 h-9 text-base rounded-sm no-print">-</button>
+                <div id="char-level-display" class="dossier-input flex-1 h-9 flex items-center justify-center font-mono text-lg font-black rounded-sm">1</div>
+                <button onclick="changeLevel(1)" class="btn-tactical w-9 h-9 text-base rounded-sm no-print">+</button>
+              </div>
+              <p id="level-next-hint" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Nv 2: +1 Habilidade Geral</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PENDING ABILITY BANNER (IF ANY UNCHOSEN MILESTONE EXISTS) -->
+        <div id="pending-abilities-banner" class="hidden mb-4 p-3 dossier-card border-2 border-current rounded-sm flex flex-wrap items-center justify-between gap-2 no-print">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 bg-red-800 text-white font-mono text-[10px] font-black uppercase">PENDENTE</span>
+            <span id="pending-abilities-text" class="font-mono text-xs font-bold">Você tem escolhas de habilidade disponíveis para o seu nível atual!</span>
+          </div>
+          <div id="pending-abilities-buttons" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- ATTRIBUTES, VITALS & STRESS/WILLPOWER -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
+          
+          <!-- ATRIBUTOS (4 cols) -->
+          <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between border-b border-current pb-1.5 mb-2">
+                <h3 class="font-mono text-sm font-black uppercase tracking-wider">ATRIBUTOS</h3>
+                <button onclick="toggleFreeMode()" id="free-mode-btn" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print" title="Alterna entre distribuição oficial [d8, d8, d6] + Tipo ou edição livre">
+                  Modo: Oficial
+                </button>
+              </div>
+              <p id="attr-helper-text" class="text-[11px] font-mono opacity-80 mb-3">
+                Base: distribua <b>d8, d8, d6</b>. O Tipo aplica +1 passo automático.
+              </p>
+
+              <div class="space-y-2.5" id="attributes-container">
+                <!-- Rendered by JS -->
+              </div>
+            </div>
+
+            <div class="mt-3 pt-2 border-t border-dashed border-current flex justify-between text-[10px] font-mono opacity-75">
+              <span>d4: Nenhuma</span>
+              <span>d6: Básica</span>
+              <span>d8: Aptidão</span>
+              <span>d10: Acima</span>
+              <span>d12: Ápice</span>
+            </div>
+          </div>
+
+          <!-- PV, PC, GUARDA, DESLOCAMENTO, PP (4 cols) -->
+          <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between gap-3">
+            <!-- PV -->
+            <div class="dossier-card p-2.5 rounded-sm">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-mono text-xs font-black uppercase">PONTOS DE VIDA (PV)</span>
+                <span id="pv-formula-hint" class="font-mono text-[10px] opacity-70">Max(CORPO) + Tipo</span>
               </div>
               <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-1.5" id="will-pips-container">
-                  <!-- 3 pips -->
+                <div class="flex items-center gap-1 no-print">
+                  <button onclick="adjustResource('pv', -5)" class="btn-tactical px-2 py-1 text-xs rounded-sm">-5</button>
+                  <button onclick="adjustResource('pv', -1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">-1</button>
                 </div>
-                <div class="flex gap-1 no-print">
-                  <button onclick="spendWillpower('stress')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm" title="Gasta 1 Vontade para remover 1 Estresse ou Dado de Medo">
-                    -1 Estresse
-                  </button>
-                  <button onclick="spendWillpower('reroll')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm" title="Gasta 1 Vontade para refazer um teste ou Impulso de Sobrevivente">
-                    Usar Vontade
-                  </button>
+                <div class="flex items-baseline gap-1 font-mono">
+                  <input type="number" id="pv-current" onchange="setResource('pv', this.value)" class="dossier-input w-14 text-center text-xl font-black py-0.5 rounded-sm" />
+                  <span class="text-lg font-bold">/</span>
+                  <span id="pv-max" class="text-xl font-black">10</span>
                 </div>
+                <div class="flex items-center gap-1 no-print">
+                  <button onclick="adjustResource('pv', 1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">+1</button>
+                  <button onclick="adjustResource('pv', 5)" class="btn-tactical px-2 py-1 text-xs rounded-sm">+5</button>
+                </div>
+              </div>
+              <div id="zero-pv-warning" class="hidden mt-1.5 p-1.5 bg-red-800 text-white font-mono text-[10px] font-bold uppercase text-center rounded-sm">
+                ⚠ 0 PV: MORRENDO & INCONSCIENTE (Sobrevive 3 rodadas | DT Medicina: 12 + Excedente)
+              </div>
+            </div>
+
+            <!-- PC -->
+            <div class="dossier-card p-2.5 rounded-sm">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-mono text-xs font-black uppercase">PONTOS DE CONCENTRAÇÃO (PC)</span>
+                <span id="pc-formula-hint" class="font-mono text-[10px] opacity-70">Max(ALMA) + Tipo</span>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1 no-print">
+                  <button onclick="adjustResource('pc', -3)" class="btn-tactical px-2 py-1 text-xs rounded-sm">-3</button>
+                  <button onclick="adjustResource('pc', -1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">-1</button>
+                </div>
+                <div class="flex items-baseline gap-1 font-mono">
+                  <input type="number" id="pc-current" onchange="setResource('pc', this.value)" class="dossier-input w-14 text-center text-xl font-black py-0.5 rounded-sm" />
+                  <span class="text-lg font-bold">/</span>
+                  <span id="pc-max" class="text-xl font-black">10</span>
+                </div>
+                <div class="flex items-center gap-1 no-print">
+                  <button onclick="adjustResource('pc', 1)" class="btn-tactical px-2.5 py-1 text-xs rounded-sm">+1</button>
+                  <button onclick="adjustResource('pc', 3)" class="btn-tactical px-2 py-1 text-xs rounded-sm">+3</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- GUARDA, PP & DESLOCAMENTO -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="dossier-card p-2 text-center rounded-sm">
+                <span class="block font-mono text-[10px] font-bold uppercase opacity-75">GUARDA</span>
+                <span id="stat-guarda" class="block font-mono text-2xl font-black mt-0.5">7</span>
+                <span id="guarda-breakdown" class="block font-mono text-[9px] opacity-70 truncate">Base 7</span>
+              </div>
+              <div class="dossier-card p-2 text-center rounded-sm">
+                <span class="block font-mono text-[10px] font-bold uppercase opacity-75">PROTEÇÃO (PP)</span>
+                <span id="stat-pp" class="block font-mono text-2xl font-black mt-0.5">0</span>
+                <span id="pp-breakdown" class="block font-mono text-[9px] opacity-70 truncate">Perm + Temp</span>
+              </div>
+              <div class="dossier-card p-2 text-center rounded-sm">
+                <span class="block font-mono text-[10px] font-bold uppercase opacity-75">DESLOC.</span>
+                <span id="stat-speed" class="block font-mono text-2xl font-black mt-0.5">9m</span>
+                <span id="speed-squares" class="block font-mono text-[9px] opacity-70">6 quad.</span>
               </div>
             </div>
           </div>
 
-          <!-- DESCANSOS -->
-          <div class="pt-2 border-t border-current no-print">
-            <span class="block font-mono text-[10px] font-bold uppercase opacity-75 mb-1.5">DESCANSOS & RECUPERAÇÃO</span>
-            <div class="grid grid-cols-2 gap-1.5">
-              <button onclick="openAlertRestModal()" class="btn-tactical py-1.5 px-2 text-[10px] rounded-sm">
-                ⛺ Descanso Alerta
-              </button>
-              <button onclick="takeSafeRest()" class="btn-tactical-solid py-1.5 px-2 text-[10px] rounded-sm">
-                🏠 Descanso Seguro
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ACTIVE CONDITIONS BAR -->
-      <div class="dossier-box p-2.5 rounded-sm mb-5">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-          <span class="font-mono text-xs font-black uppercase tracking-wider">CONDIÇÕES & SITUAÇÕES EXTREMAS ATIVAS</span>
-          <span class="font-mono text-[10px] opacity-75">Clique para ativar/desativar (aplica penalidades automáticas na Guarda/Deslocamento)</span>
-        </div>
-        <div id="conditions-container" class="flex flex-wrap gap-1.5">
-          <!-- Rendered by JS -->
-        </div>
-        <div id="active-conditions-notes" class="mt-2 space-y-1 text-xs font-mono"></div>
-      </div>
-
-      <!-- SKILLS SECTION (26 PERÍCIAS) -->
-      <div>
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-current pb-1.5 mb-3 gap-2">
-          <div>
-            <h3 class="font-mono text-base font-black uppercase tracking-wider">PERÍCIAS (26) // Destreinado: d4 | Treinamento: d6 a d12</h3>
-          </div>
-          <div id="skill-budget-tracker" class="font-mono text-xs px-2.5 py-1 dossier-box rounded-sm">
-            <!-- Shows initial skill allocation status -->
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3" id="skills-grid">
-          <!-- 4 Categories rendered by JS -->
-        </div>
-      </div>
-    </section>
-
-    <!-- ===================================================================== -->
-    <!-- PÁGINA 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO                       -->
-    <!-- ===================================================================== -->
-    <section id="page-2" class="sheet-container p-4 sm:p-6 hidden print-show-all page-break">
-      <!-- Dossier Header -->
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-current pb-2 mb-4 gap-2">
-        <div>
-          <span class="font-mono text-xs font-bold tracking-widest uppercase opacity-75">DECLÍNIO: RPG // FICHA DE SOBREVIVENTE (PÁGINA 2 DE 2)</span>
-          <h2 class="text-2xl sm:text-3xl font-black tracking-tight uppercase">PÁG. 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO</h2>
-        </div>
-        <div class="font-mono text-xs font-bold">
-          SOBREVIVENTE: <span id="p2-char-name" class="underline">SEM NOME</span> (NV. <span id="p2-char-level">1</span>)
-        </div>
-      </div>
-
-      <!-- TOP ROW: HABILIDADES & ESTRESSE PERMANENTE -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
-        
-        <!-- HABILIDADES DE SOBREVIVENTE & PROGRESSÃO (8 cols) -->
-        <div class="lg:col-span-8 dossier-box p-3.5 rounded-sm">
-          <div class="flex flex-wrap items-center justify-between border-b-2 border-current pb-1.5 mb-3 gap-2">
+          <!-- ESTRESSE (6) / VONTADE (3) & DESCANSOS (4 cols) -->
+          <div class="lg:col-span-4 dossier-box p-3 rounded-sm flex flex-col justify-between gap-2.5">
             <div>
-              <h3 class="font-mono text-sm font-black uppercase tracking-wider">HABILIDADES DE SOBREVIVENTE & PROGRESSÃO</h3>
-              <p class="font-mono text-[11px] opacity-75">Tipo, Estilo, Arquétipo e Habilidades Gerais desbloqueadas por nível</p>
-            </div>
-            <span class="font-mono text-[11px] font-bold px-2 py-0.5 border border-current">Nível Atual: <span id="p2-level-badge">1</span>/12</span>
-          </div>
+              <div class="flex items-center justify-between border-b border-current pb-1 mb-2">
+                <h3 class="font-mono text-xs font-black uppercase">ESTRESSE (6) & VONTADE (<span id="will-max-label">3</span>)</h3>
+                <span class="font-mono text-[10px] opacity-75">6º Estresse = Colapso</span>
+              </div>
 
-          <!-- Progression Slots List -->
-          <div id="abilities-list" class="space-y-3">
-            <!-- Rendered dynamically based on level, tipo, estilo, arquetipo and general abilities -->
-          </div>
-        </div>
-
-        <!-- ESTRESSE PERMANENTE / SEQUELAS (4 cols) -->
-        <div class="lg:col-span-4 dossier-box p-3.5 rounded-sm flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between border-b-2 border-current pb-1.5 mb-2">
-              <h3 class="font-mono text-sm font-black uppercase tracking-wider">ESTRESSE PERMANENTE</h3>
-              <span class="font-mono text-[10px] font-bold text-red-700 dark:text-red-400">MÁX. 4 SEQUELAS</span>
-            </div>
-            <p class="text-[11px] opacity-80 mb-3 leading-snug">
-              Ao preencher a 6ª caixa de Estresse, você sofre Colapso Mental e ganha 1 Sequela. Ao receber a <b>5ª Sequela</b>, o personagem torna-se <b>INJOGÁVEL</b>.
-            </p>
-
-            <div class="space-y-2.5" id="permanent-stress-list">
-              <!-- 4 Trauma Slots -->
-            </div>
-
-            <div id="unplayable-warning" class="hidden mt-3 p-2 bg-red-800 text-white font-mono text-xs font-black uppercase text-center rounded-sm">
-              ☠ LIMITE DE TRAUMAS EXCEDIDO (5ª SEQUELA): SOBREVIVENTE INJOGÁVEL
-            </div>
-          </div>
-
-          <!-- Quick 1d10 Reference -->
-          <div class="mt-4 pt-3 border-t border-current no-print">
-            <details class="text-xs">
-              <summary class="font-mono font-bold uppercase cursor-pointer select-none">
-                📋 Tabela 1d10: Sequelas & Estresse Temp.
-              </summary>
-              <div class="mt-2 space-y-2 max-h-60 overflow-y-auto pr-1 text-[11px] leading-tight">
-                <div class="dossier-card p-2 rounded-sm">
-                  <strong class="font-mono block mb-1 underline">1d10 — ESTRESSE PERMANENTE:</strong>
-                  <ol class="list-decimal pl-4 space-y-0.5">
-                    <li><b>-2 PV Máximos</b> permanentemente.</li>
-                    <li><b>-2 PC Máximos</b> permanentemente.</li>
-                    <li><b>-1 Espaço de Vontade</b> permanente (máx 2).</li>
-                    <li><b>-1 Passo em Atributo</b> permanente (mín d4).</li>
-                    <li><b>-1 Passo em Perícia</b> treinada permanente.</li>
-                    <li><b>Paranoia Severa:</b> exige 1 PC para aceitar ação Ajudar.</li>
-                    <li><b>Mente Instável:</b> -1 fixo em testes de INTELECTO.</li>
-                    <li><b>Mão Trêmula:</b> -1 fixo em testes de CORPO.</li>
-                    <li><b>Alma Cansada:</b> -1 fixo em testes de ALMA.</li>
-                    <li><b>Nada:</b> mente suportou sem sequela desta vez.</li>
-                  </ol>
+              <!-- Stress Pips -->
+              <div class="mb-2.5">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-mono text-[11px] font-bold uppercase text-red-700 dark:text-red-400">MARCADORES DE ESTRESSE</span>
+                  <span id="stress-count-label" class="font-mono text-xs font-bold">0 / 6</span>
                 </div>
-                <div class="dossier-card p-2 rounded-sm">
-                  <strong class="font-mono block mb-1 underline">1d10 — ESTRESSE TEMPORÁRIO (Cena/Descanso):</strong>
-                  <ol class="list-decimal pl-4 space-y-0.5">
-                    <li>-1 passo em Perícias Mentais até fim da cena.</li>
-                    <li>-1 passo em um Atributo até fim da cena.</li>
-                    <li>-1 passo em Perícias Físicas até fim da cena.</li>
-                    <li>-1 passo em Perícias Emocionais até fim da cena.</li>
-                    <li><b>Dado de Medo (d6–d10):</b> descarta dados &le; Medo.</li>
-                    <li>Perde <b>1d4 PV</b> imediatamente.</li>
-                    <li>Perde <b>1d4 PC</b> imediatamente.</li>
-                    <li>Perde <b>1 Marcador de Vontade</b> atual.</li>
-                    <li>Perde todas as ações na próxima rodada.</li>
-                    <li><b>Nada:</b> engole o pavor e segue em frente.</li>
-                  </ol>
+                <div class="flex items-center gap-1.5" id="stress-pips-container">
+                  <!-- 6 pips -->
                 </div>
               </div>
-            </details>
-          </div>
-        </div>
-      </div>
 
-      <!-- BOTTOM ROW: INVENTÁRIO & SLOTS DE CARGA -->
-      <div class="dossier-box p-3.5 rounded-sm">
-        <div class="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-current pb-2 mb-3 gap-2">
-          <div>
-            <h3 class="font-mono text-base font-black uppercase tracking-wider">INVENTÁRIO & SLOTS DE CARGA</h3>
-            <p class="font-mono text-[11px] opacity-75">
-              Agrupáveis: 1 slot a cada 10 un. | Coldre: -1 arma leve | Bandoleira: -1 slot arma pesada | Aljava/Bolsa: até 50 projéteis em 1 slot
-            </p>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <div id="slots-counter-box" class="px-3 py-1.5 border-2 border-current font-mono text-xs sm:text-sm font-black rounded-sm">
-              CARGA: <span id="slots-used">0</span> / <span id="slots-max">20</span> SLOTS FIXOS
+              <!-- Willpower Pips -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-mono text-[11px] font-bold uppercase">MARCADORES DE VONTADE</span>
+                  <span id="will-count-label" class="font-mono text-xs font-bold">0 / 3</span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5" id="will-pips-container">
+                    <!-- 3 pips -->
+                  </div>
+                  <div class="flex gap-1 no-print">
+                    <button onclick="spendWillpower('stress')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm" title="Gasta 1 Vontade para remover 1 Estresse ou Dado de Medo">
+                      -1 Estresse
+                    </button>
+                    <button onclick="spendWillpower('reroll')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm" title="Gasta 1 Vontade para refazer um teste ou Impulso de Sobrevivente">
+                      Usar Vontade
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button onclick="openCatalogModal()" class="btn-tactical-solid px-3 py-2 text-xs rounded-sm no-print">
-              + Catálogo Oficial
-            </button>
-            <button onclick="openCustomItemModal()" class="btn-tactical px-3 py-2 text-xs rounded-sm no-print">
-              + Item Livre
-            </button>
+
+            <!-- DESCANSOS -->
+            <div class="pt-2 border-t border-current no-print">
+              <span class="block font-mono text-[10px] font-bold uppercase opacity-75 mb-1.5">DESCANSOS & RECUPERAÇÃO</span>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button onclick="openAlertRestModal()" class="btn-tactical py-1.5 px-2 text-[10px] rounded-sm">
+                  ⛺ Descanso Alerta
+                </button>
+                <button onclick="takeSafeRest()" class="btn-tactical-solid py-1.5 px-2 text-[10px] rounded-sm">
+                  🏠 Descanso Seguro
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div id="overload-warning" class="hidden mb-3 p-2 bg-red-800 text-white font-mono text-xs font-black uppercase text-center rounded-sm">
-          ⚠ SOBRECARGA: Você ultrapassou sua capacidade máxima de slots! Seu deslocamento foi reduzido a 0m.
+        <!-- ACTIVE CONDITIONS BAR -->
+        <div class="dossier-box p-2.5 rounded-sm mb-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <span class="font-mono text-xs font-black uppercase tracking-wider">CONDIÇÕES & SITUAÇÕES EXTREMAS ATIVAS</span>
+            <span class="font-mono text-[10px] opacity-75">Clique para ativar/desativar (aplica penalidades automáticas na Guarda/Deslocamento)</span>
+          </div>
+          <div id="conditions-container" class="flex flex-wrap gap-1.5">
+            <!-- Rendered by JS -->
+          </div>
+          <div id="active-conditions-notes" class="mt-2 space-y-1 text-xs font-mono"></div>
         </div>
 
-        <!-- INVENTORY LIST -->
-        <div id="inventory-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <!-- Rendered by JS -->
+        <!-- SKILLS SECTION (26 PERÍCIAS) -->
+        <div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-current pb-1.5 mb-3 gap-2">
+            <div>
+              <h3 class="font-mono text-base font-black uppercase tracking-wider">PERÍCIAS (26) // Destreinado: d4 | Treinamento: d6 a d12</h3>
+            </div>
+            <div id="skill-budget-tracker" class="font-mono text-xs px-2.5 py-1 dossier-box rounded-sm">
+              <!-- Shows initial skill allocation status -->
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3" id="skills-grid">
+            <!-- 4 Categories rendered by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- PÁGINA 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO                     -->
+      <!-- =================================================================== -->
+      <section id="page-2" class="sheet-container p-4 sm:p-6 hidden print-show-all page-break">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-current pb-2 mb-4 gap-2">
+          <div>
+            <span class="font-mono text-xs font-bold tracking-widest uppercase opacity-75">DECLÍNIO: RPG // FICHA DE SOBREVIVENTE (PÁGINA 2 DE 2)</span>
+            <h2 class="text-2xl sm:text-3xl font-black tracking-tight uppercase">PÁG. 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO</h2>
+          </div>
+          <div class="font-mono text-xs font-bold">
+            SOBREVIVENTE: <span id="p2-char-name" class="underline">SEM NOME</span> (NV. <span id="p2-char-level">1</span>)
+          </div>
         </div>
 
-        <div id="inventory-empty" class="text-center py-8 opacity-60 font-mono text-xs">
-          Mochila vazia. Clique em <b>"+ Catálogo Oficial"</b> para equipar armas, proteções, munições e suprimentos.
+        <!-- TOP ROW: HABILIDADES & ESTRESSE PERMANENTE -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          
+          <!-- HABILIDADES DE SOBREVIVENTE & PROGRESSÃO (8 cols) -->
+          <div class="lg:col-span-8 dossier-box p-3.5 rounded-sm">
+            <div class="flex flex-wrap items-center justify-between border-b-2 border-current pb-1.5 mb-3 gap-2">
+              <div>
+                <h3 class="font-mono text-sm font-black uppercase tracking-wider">HABILIDADES DE SOBREVIVENTE & PROGRESSÃO</h3>
+                <p class="font-mono text-[11px] opacity-75">Lista limpa das habilidades adquiridas por Tipo, Estilo, Arquétipo e Progressão</p>
+              </div>
+              <span class="font-mono text-[11px] font-bold px-2 py-0.5 border border-current">Nível Atual: <span id="p2-level-badge">1</span>/12</span>
+            </div>
+
+            <!-- Progression Slots List -->
+            <div id="abilities-list" class="space-y-3">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- ESTRESSE PERMANENTE / SEQUELAS (4 cols) -->
+          <div class="lg:col-span-4 dossier-box p-3.5 rounded-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between border-b-2 border-current pb-1.5 mb-2">
+                <h3 class="font-mono text-sm font-black uppercase tracking-wider">ESTRESSE PERMANENTE</h3>
+                <span class="font-mono text-[10px] font-bold text-red-700 dark:text-red-400">MÁX. 4 SEQUELAS</span>
+              </div>
+              <p class="text-[11px] opacity-80 mb-3 leading-snug">
+                Ao preencher a 6ª caixa de Estresse, você sofre Colapso Mental e ganha 1 Sequela. Ao receber a <b>5ª Sequela</b>, o personagem torna-se <b>INJOGÁVEL</b>.
+              </p>
+
+              <div class="space-y-2.5" id="permanent-stress-list">
+                <!-- 4 Trauma Slots with dynamic Attribute / Trained Skill reduction selectors -->
+              </div>
+
+              <div id="unplayable-warning" class="hidden mt-3 p-2 bg-red-800 text-white font-mono text-xs font-black uppercase text-center rounded-sm">
+                ☠ LIMITE DE TRAUMAS EXCEDIDO (5ª SEQUELA): SOBREVIVENTE INJOGÁVEL
+              </div>
+            </div>
+
+            <!-- Quick 1d10 Reference -->
+            <div class="mt-4 pt-3 border-t border-current no-print">
+              <details class="text-xs">
+                <summary class="font-mono font-bold uppercase cursor-pointer select-none">
+                  📋 Tabela 1d10: Sequelas & Estresse Temp.
+                </summary>
+                <div class="mt-2 space-y-2 max-h-60 overflow-y-auto pr-1 text-[11px] leading-tight">
+                  <div class="dossier-card p-2 rounded-sm">
+                    <strong class="font-mono block mb-1 underline">1d10 — ESTRESSE PERMANENTE:</strong>
+                    <ol class="list-decimal pl-4 space-y-0.5">
+                      <li><b>-2 PV Máximos</b> permanentemente.</li>
+                      <li><b>-2 PC Máximos</b> permanentemente.</li>
+                      <li><b>-1 Espaço de Vontade</b> permanente (máx 2).</li>
+                      <li><b>-1 Passo em Atributo</b> permanente (mín d4).</li>
+                      <li><b>-1 Passo em Perícia</b> treinada permanente.</li>
+                      <li><b>Paranoia Severa:</b> exige 1 PC para aceitar ação Ajudar.</li>
+                      <li><b>Mente Instável:</b> -1 fixo em testes de INTELECTO.</li>
+                      <li><b>Mão Trêmula:</b> -1 fixo em testes de CORPO.</li>
+                      <li><b>Alma Cansada:</b> -1 fixo em testes de ALMA.</li>
+                      <li><b>Nada:</b> mente suportou sem sequela desta vez.</li>
+                    </ol>
+                  </div>
+                  <div class="dossier-card p-2 rounded-sm">
+                    <strong class="font-mono block mb-1 underline">1d10 — ESTRESSE TEMPORÁRIO (Cena/Descanso):</strong>
+                    <ol class="list-decimal pl-4 space-y-0.5">
+                      <li>-1 passo em Perícias Mentais até fim da cena.</li>
+                      <li>-1 passo em um Atributo até fim da cena.</li>
+                      <li>-1 passo em Perícias Físicas até fim da cena.</li>
+                      <li>-1 passo em Perícias Emocionais até fim da cena.</li>
+                      <li><b>Dado de Medo (d6–d10):</b> descarta dados &le; Medo.</li>
+                      <li>Perde <b>1d4 PV</b> imediatamente.</li>
+                      <li>Perde <b>1d4 PC</b> imediatamente.</li>
+                      <li>Perde <b>1 Marcador de Vontade</b> atual.</li>
+                      <li>Perde todas as ações na próxima rodada.</li>
+                      <li><b>Nada:</b> engole o pavor e segue em frente.</li>
+                    </ol>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
         </div>
+
+        <!-- BOTTOM ROW: INVENTÁRIO & SLOTS DE CARGA -->
+        <div class="dossier-box p-3.5 rounded-sm">
+          <div class="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-current pb-2 mb-3 gap-2">
+            <div>
+              <h3 class="font-mono text-base font-black uppercase tracking-wider">INVENTÁRIO & SLOTS DE CARGA</h3>
+              <p class="font-mono text-[11px] opacity-75">
+                Agrupáveis: 1 slot a cada 10 un. | Coldre: -1 arma leve | Bandoleira: -1 slot arma pesada | Aljava/Bolsa: até 50 projéteis em 1 slot
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <div id="slots-counter-box" class="px-3 py-1.5 border-2 border-current font-mono text-xs sm:text-sm font-black rounded-sm">
+                CARGA: <span id="slots-used">0</span> / <span id="slots-max">20</span> SLOTS FIXOS
+              </div>
+              <button onclick="openCatalogModal()" class="btn-tactical-solid px-3 py-2 text-xs rounded-sm no-print">
+                + Catálogo Oficial
+              </button>
+              <button onclick="openCustomItemModal()" class="btn-tactical px-3 py-2 text-xs rounded-sm no-print">
+                + Item Livre
+              </button>
+            </div>
+          </div>
+
+          <div id="overload-warning" class="hidden mb-3 p-2 bg-red-800 text-white font-mono text-xs font-black uppercase text-center rounded-sm">
+            ⚠ SOBRECARGA: Você ultrapassou sua capacidade máxima de slots! Seu deslocamento foi reduzido a 0m.
+          </div>
+
+          <!-- INVENTORY LIST -->
+          <div id="inventory-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- Rendered by JS -->
+          </div>
+
+          <div id="inventory-empty" class="text-center py-8 opacity-60 font-mono text-xs">
+            Mochila vazia. Clique em <b>"+ Catálogo Oficial"</b> para equipar armas, proteções, munições e suprimentos.
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: POP-UP DE ESCOLHA DE HABILIDADE (ARQUÉTIPO OU GERAL)           -->
+  <!-- ===================================================================== -->
+  <div id="ability-select-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-2 sm:p-4 no-print">
+    <div class="sheet-container w-full max-w-3xl max-h-[90vh] flex flex-col rounded-sm overflow-hidden">
+      <div class="p-3 sm:p-4 border-b-2 border-current flex items-center justify-between gap-2">
+        <div>
+          <span id="ability-modal-kicker" class="font-mono text-[10px] font-bold uppercase tracking-widest opacity-75">PROGRESSÃO DE SOBREVIVENTE</span>
+          <h3 id="ability-modal-title" class="font-mono text-base sm:text-lg font-black uppercase">ESCOLHER HABILIDADE</h3>
+        </div>
+        <button onclick="closeAbilityModal()" class="btn-tactical px-3 py-1 text-xs rounded-sm">✕ Fechar</button>
       </div>
-    </section>
 
-  </main>
+      <div class="p-3 dossier-box border-b border-current text-xs font-mono">
+        <p id="ability-modal-subtitle">Selecione uma das opções abaixo para adicioná-la permanentemente à lista de habilidades da sua ficha.</p>
+      </div>
+
+      <div id="ability-modal-options" class="p-3 sm:p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
+        <!-- Populated dynamically with cards -->
+      </div>
+    </div>
+  </div>
 
   <!-- ===================================================================== -->
   <!-- MODAL: CATÁLOGO OFICIAL DE EQUIPAMENTOS                               -->
   <!-- ===================================================================== -->
-  <div id="catalog-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
+  <div id="catalog-modal" class="fixed inset-0 bg-black/75 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
     <div class="sheet-container w-full max-w-4xl max-h-[90vh] flex flex-col rounded-sm overflow-hidden">
       <div class="p-3 sm:p-4 border-b-2 border-current flex items-center justify-between">
         <div>
@@ -654,7 +755,6 @@
         <button onclick="closeCatalogModal()" class="btn-tactical px-3 py-1 text-xs rounded-sm">✕ Fechar</button>
       </div>
 
-      <!-- Category Filter & Search -->
       <div class="p-3 dossier-box border-b border-current flex flex-col sm:flex-row gap-2 justify-between">
         <div class="flex flex-wrap gap-1" id="catalog-tabs">
           <button onclick="setCatalogCategory('melee')" data-cat="melee" class="cat-tab btn-tactical-solid px-2.5 py-1 text-xs rounded-sm">Armas Brancas</button>
@@ -666,7 +766,6 @@
         <input type="text" id="catalog-search" oninput="renderCatalogItems()" placeholder="Buscar item..." class="dossier-input px-2.5 py-1 text-xs rounded-sm sm:w-52" />
       </div>
 
-      <!-- Catalog Items Grid -->
       <div id="catalog-items-container" class="p-3 sm:p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
         <!-- Populated by JS -->
       </div>
@@ -676,7 +775,7 @@
   <!-- ===================================================================== -->
   <!-- MODAL: ITEM CUSTOMIZADO                                               -->
   <!-- ===================================================================== -->
-  <div id="custom-item-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-4 no-print">
+  <div id="custom-item-modal" class="fixed inset-0 bg-black/75 z-40 hidden items-center justify-center p-4 no-print">
     <div class="sheet-container w-full max-w-md p-4 rounded-sm">
       <div class="flex items-center justify-between border-b-2 border-current pb-2 mb-3">
         <h3 class="font-mono text-base font-black uppercase">ADICIONAR ITEM CUSTOMIZADO</h3>
@@ -716,7 +815,7 @@
   <!-- ===================================================================== -->
   <!-- MODAL: DESCANSO ALERTA                                                -->
   <!-- ===================================================================== -->
-  <div id="alert-rest-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-4 no-print">
+  <div id="alert-rest-modal" class="fixed inset-0 bg-black/75 z-40 hidden items-center justify-center p-4 no-print">
     <div class="sheet-container w-full max-w-md p-4 rounded-sm">
       <div class="flex items-center justify-between border-b-2 border-current pb-2 mb-3">
         <h3 class="font-mono text-base font-black uppercase">⛺ DESCANSO ALERTA (1h a 3h)</h3>
@@ -741,7 +840,7 @@
   <!-- ===================================================================== -->
   <!-- MODAL: CONSULTA RÁPIDA DE REGRAS                                      -->
   <!-- ===================================================================== -->
-  <div id="rules-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
+  <div id="rules-modal" class="fixed inset-0 bg-black/75 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
     <div class="sheet-container w-full max-w-3xl max-h-[88vh] flex flex-col rounded-sm overflow-hidden">
       <div class="p-3 sm:p-4 border-b-2 border-current flex items-center justify-between">
         <h3 class="font-mono text-base sm:text-lg font-black uppercase">📖 GUIA RÁPIDO DE REGRAS — DECLÍNIO ALFA 0.1</h3>
@@ -793,15 +892,15 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MODAL: CONFIRMAR RESET                                                -->
+  <!-- MODAL: CONFIRMAR EXCLUSÃO DA BIBLIOTECA                               -->
   <!-- ===================================================================== -->
-  <div id="confirm-reset-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4 no-print">
+  <div id="confirm-delete-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4 no-print">
     <div class="sheet-container w-full max-w-sm p-4 rounded-sm">
-      <h3 class="font-mono text-base font-black uppercase mb-2">INICIAR NOVA FICHA?</h3>
-      <p class="text-xs mb-4">Isso limpará todos os dados atuais da tela. Exporte o JSON antes caso queira guardar este sobrevivente.</p>
+      <h3 class="font-mono text-base font-black uppercase mb-2">EXCLUIR SOBREVIVENTE?</h3>
+      <p id="confirm-delete-text" class="text-xs mb-4">Tem certeza que deseja remover esta ficha permanentemente da biblioteca?</p>
       <div class="flex justify-end gap-2">
-        <button onclick="closeConfirmReset()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">Cancelar</button>
-        <button onclick="resetCharacter()" class="btn-tactical-solid px-3 py-1.5 text-xs rounded-sm">Limpar Tudo</button>
+        <button onclick="closeConfirmDelete()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">Cancelar</button>
+        <button onclick="confirmDeleteCharacter()" class="btn-tactical-solid px-3 py-1.5 text-xs rounded-sm">Excluir Ficha</button>
       </div>
     </div>
   </div>
@@ -821,9 +920,9 @@
         name: 'Robusto',
         attrBonus: 'corpo',
         pvBase: 8,
-        pvStep: 3, // +3 nos níveis 4, 8 e 12
+        pvStep: 3,
         pcBase: 3,
-        pcStep: 1, // +1 nos níveis 4, 8 e 12
+        pcStep: 1,
         skillGrants: { d6: 3, d8: 1, d10: 0 },
         abilityName: 'Duro na Queda',
         abilityCost: '1 Estresse (Nv 10: ou 3 PC)',
@@ -1038,7 +1137,7 @@
           { id: 'duro_de_matar', name: 'Duro de Matar', cost: '5 PC + 2 Estresse', desc: 'Quando algo reduzir seus PV a 0, gaste 5 PC e receba 2 Marcadores de Estresse para permanecer com 1 PV (cai inconsciente).' },
           { id: 'segurar_pontas', name: 'Segurar as Pontas', cost: '2 PC', desc: 'Gaste 2 PC para absorver 1 Marcador de Estresse que um aliado adjacente receberia, transferindo-o para si mesmo.' },
           { id: 'folego_extra', name: 'Fôlego Extra', cost: '1 Vontade', desc: 'Gaste 1 Marcador de Vontade para ignorar as penalidades de Exaustão durante uma cena.' },
-          { id: 'forca_vontade', name: 'Força de Vontade', cost: 'Passiva / 3 PC', desc: 'Seus PV e PC máximos aumentam em +2 (e +2 no nível seguinte). Também pode gastar 3 PC para ganhar 4 PP contra dano físico até o fim da cena.' }
+          { id: 'forca_vontade', name: 'Força de Vontade', cost: 'Passiva / 3 PC', desc: 'Seus PV e PC máximos aumentam em +2 nesse nível e +2 no nível seguinte. Além disso, pode gastar 3 PC para ganhar 4 PP contra dano físico até o fim da cena.' }
         ]
       },
       piloto: {
@@ -1147,7 +1246,6 @@
     ];
 
     const SKILLS_DATA = [
-      // TÉCNICAS (8)
       { id: 'agricultura', name: 'Agricultura', cat: 'TÉCNICAS' },
       { id: 'biologia', name: 'Biologia', cat: 'TÉCNICAS' },
       { id: 'crime', name: 'Crime', cat: 'TÉCNICAS', subsystem: 'lockpick' },
@@ -1156,7 +1254,6 @@
       { id: 'medicina', name: 'Medicina', cat: 'TÉCNICAS' },
       { id: 'quimica', name: 'Química', cat: 'TÉCNICAS' },
       { id: 'tecnologia', name: 'Tecnologia', cat: 'TÉCNICAS', subsystem: 'hacking' },
-      // SOCIAIS (7)
       { id: 'empatia', name: 'Empatia', cat: 'SOCIAIS' },
       { id: 'enganacao', name: 'Enganação', cat: 'SOCIAIS' },
       { id: 'intimidacao', name: 'Intimidação', cat: 'SOCIAIS' },
@@ -1164,14 +1261,12 @@
       { id: 'performance', name: 'Performance', cat: 'SOCIAIS' },
       { id: 'persuasao', name: 'Persuasão', cat: 'SOCIAIS' },
       { id: 'resiliencia', name: 'Resiliência', cat: 'SOCIAIS' },
-      // COMBATE (6)
       { id: 'armas_brancas', name: 'Armas Brancas', cat: 'COMBATE' },
       { id: 'armas_fogo', name: 'Armas de Fogo (Disparo)', cat: 'COMBATE' },
       { id: 'briga', name: 'Briga', cat: 'COMBATE' },
       { id: 'explosivos', name: 'Explosivos', cat: 'COMBATE' },
       { id: 'furtividade', name: 'Furtividade', cat: 'COMBATE' },
       { id: 'reflexos', name: 'Reflexos', cat: 'COMBATE' },
-      // GERAIS (5)
       { id: 'atletismo', name: 'Atletismo', cat: 'GERAIS', subsystem: 'balance' },
       { id: 'investigacao', name: 'Investigação', cat: 'GERAIS' },
       { id: 'percepcao', name: 'Percepção', cat: 'GERAIS' },
@@ -1193,7 +1288,6 @@
       { id: 'sede', name: 'Sede (24h+)', halfSpeed: true, effect: '-1 passo em INTELECTO, deslocamento metade e -1 fixo em testes de INTELECTO e perícias mentais.' }
     ];
 
-    // CATÁLOGO OFICIAL COMPLETO DE EQUIPAMENTOS
     const CATALOG_ITEMS = [
       // ARMAS BRANCAS (13)
       { id: 'soco_ingles', cat: 'melee', name: 'Soco Inglês', damage: 'RB + 1', slots: 1, range: 'Corpo a Corpo', weightClass: 'light', props: ['Leve', 'Contundente', 'Usa Briga'], desc: 'Utiliza a perícia Briga ao invés de Armas Brancas. Pode ser empunhado com outra arma leve.' },
@@ -1237,7 +1331,7 @@
       { id: 'escudo', cat: 'armor', name: 'Escudo', slots: 2, guardaBonus: 1, ppPerm: 0, props: ['+1 Guarda', 'Ocupa 1 Mão', 'Cobertura Móvel'], desc: 'Permite usar Reação para dar cobertura parcial (+2 Guarda à distância) a um aliado adjacente.' },
       { id: 'roupa_frio', cat: 'armor', name: 'Roupa de Frio', slots: 2, guardaBonus: 0, ppPerm: 0, props: ['Isolamento Térmico'], desc: 'Impede completamente penalidades por Frio Extremo e Hipotermia. Pode ser usado com Proteções Leves.' },
 
-      // SUPRIMENTOS, FERRAMENTAS E ACESSÓRIOS (16)
+      // SUPRIMENTOS, FERRAMENTAS E ACESSÓRIOS (19)
       { id: 'kit_primeiros_socorros', cat: 'supplies', name: 'Kit de Primeiros Socorros', slots: 2, maxUses: 3, isMedkit: true, props: ['3 Usos', 'Medicina DT 7 -> 1d4 PV'], desc: 'Gastando Ação Principal (Preparação) e Medicina DT 7, restaura 1d4 PV de um alvo.' },
       { id: 'injecao_adrenalina', cat: 'supplies', name: 'Injeção de Adrenalina', slots: 1, isAdrenaline: true, props: ['Uso Único', '+4 PV', 'Remove Condições'], desc: 'Restaura 4 PV imediatamente e remove Exausto, Inconsciente ou Paralisado (não funciona em 0 PV).' },
       { id: 'antidoto', cat: 'supplies', name: 'Antídoto / Antibiótico Básico', slots: 1, isConsumable: true, props: ['Uso Único', '+1 passo vs. Doenças/Toxinas'], desc: 'Concede +1 passo em testes de CORPO ou Resiliência para resistir a infecções, febres ou venenos.' },
@@ -1260,13 +1354,29 @@
     ];
 
     // =========================================================================
-    // 2. APPLICATION STATE
+    // 2. LIBRARY & CHARACTER STATE MANAGEMENT
     // =========================================================================
-    const STORAGE_KEY = 'declinio_rpg_sheet_v1';
+    const LIBRARY_KEY = 'declinio_rpg_library_v1';
+    const PREFS_KEY = 'declinio_rpg_prefs_v1';
 
-    function getDefaultState() {
+    let library = [];
+    let activeCharId = null;
+    let state = null;
+    let currentView = 'library';
+    let darkMode = false;
+    let currentCatalogCat = 'melee';
+    let deleteTargetId = null;
+    let deferredInstallPrompt = null;
+    let modalContext = { kind: null, milestoneKey: null };
+
+    function createBlankSurvivor(customName = '') {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
       return {
-        name: '',
+        id: 'surv_' + Date.now() + '_' + Math.random().toString(16).slice(2, 6),
+        createdAt: dateStr,
+        updatedAt: dateStr,
+        name: customName,
         concept: '',
         tipo: '',
         estilo: '',
@@ -1274,35 +1384,99 @@
         level: 1,
         freeMode: false,
         baseAttributes: { corpo: 'd8', intelecto: 'd8', alma: 'd6' },
-        // Initial skill choices granted by Tipo (array of skill ids)
         tipoSkillChoices: { d6: [], d8: [], d10: [] },
-        // Manual skill adjustments (deltas from level up / general abilities / custom)
         skillDeltas: {},
-        // Attribute deltas from General Abilities (Aumento de Passo em Atributo)
         attrDeltas: { corpo: 0, intelecto: 0, alma: 0 },
-        // Archetype abilities selected per milestone: { lv1: '', lv3: '', lv7: '', lv11: '' }
         archAbilities: { lv1: '', lv3: '', lv7: '', lv11: '' },
-        // General abilities selected per milestone: { lv2: '', lv4: '', lv5: '', lv8: '', lv9: '', lv12: '' }
         genAbilities: { lv2: '', lv4: '', lv5: '', lv8: '', lv9: '', lv12: '' },
-        // Vitals
         pvCurrent: 12,
         pcCurrent: 9,
         stress: 0,
         willpower: 0,
-        // 4 Permanent Stress slots
         permanentStress: ['', '', '', ''],
-        // Active conditions
+        // Stores target attribute/skill ID for trauma #4 (attribute) or #5 (skill) per slot
+        traumaTargets: ['', '', '', ''],
         conditions: [],
-        // Inventory items array
         inventory: [],
-        // UI state
-        activePage: 1,
-        darkMode: false
+        activePage: 1
       };
     }
 
-    let state = getDefaultState();
-    let currentCatalogCat = 'melee';
+    function buildRicardoCharacter() {
+      const ric = createBlankSurvivor('Ricardo Gomes');
+      ric.concept = 'Policial do interior de Minas Gerais, líder natural que sempre toma a dianteira e age rapidamente sob pressão.';
+      ric.tipo = 'inspirador';
+      ric.estilo = 'pratico';
+      ric.arquetipo = 'policial';
+      ric.level = 1;
+      ric.baseAttributes = { corpo: 'd8', intelecto: 'd6', alma: 'd8' };
+      ric.tipoSkillChoices = {
+        d6: ['atletismo', 'investigacao'],
+        d8: ['persuasao', 'percepcao'],
+        d10: []
+      };
+      ric.archAbilities.lv1 = 'voz_comando';
+      ric.pvCurrent = 14;
+      ric.pcCurrent = 15;
+
+      const addInitItem = (catId, qty, extra = {}) => {
+        const t = CATALOG_ITEMS.find(i => i.id === catId);
+        if (!t) return;
+        ric.inventory.push({
+          uid: Date.now() + Math.random().toString(16).slice(2),
+          catalogId: t.id,
+          cat: t.cat,
+          name: t.name,
+          damage: t.damage || null,
+          slots: t.slots,
+          range: t.range || null,
+          cap: t.cap || null,
+          ammoCurrent: t.cap || null,
+          ammoType: t.ammoType || null,
+          ammoKey: t.ammoKey || null,
+          weightClass: t.weightClass || null,
+          reliable: !!t.reliable,
+          reqCorpo: t.reqCorpo || null,
+          hasBurst: !!t.hasBurst,
+          isChainsaw: !!t.isChainsaw,
+          isExplosive: !!t.isExplosive,
+          guardaBonus: t.guardaBonus || 0,
+          ppPerm: t.ppPerm || 0,
+          ppTempMax: t.ppTempMax || 0,
+          ppTempCurrent: t.ppTempMax || 0,
+          equipped: false,
+          maxUses: t.maxUses || null,
+          usesCurrent: t.maxUses || null,
+          isMedkit: !!t.isMedkit,
+          isAdrenaline: !!t.isAdrenaline,
+          isConsumable: !!t.isConsumable,
+          isFood: !!t.isFood,
+          isWater: !!t.isWater,
+          hasToggle: !!t.hasToggle,
+          toggleLabels: t.toggleLabels || null,
+          toggledOn: false,
+          stackable: !!t.stackable,
+          stackSize: t.stackSize || 10,
+          props: [...(t.props || [])],
+          desc: t.desc || '',
+          qty,
+          broken: false,
+          inHolster: false,
+          inSling: false,
+          ...extra
+        });
+      };
+
+      addInitItem('revolver', 1, { inHolster: true });
+      addInitItem('municao_leve', 18);
+      addInitItem('coldre_tatico', 1);
+      addInitItem('colete_policial', 1, { equipped: true });
+      addInitItem('lanterna_tatica', 1);
+      addInitItem('racao_comida', 3);
+      addInitItem('agua_potavel', 3);
+
+      return ric;
+    }
 
     // =========================================================================
     // 3. CORE RULES & CALCULATIONS ENGINE
@@ -1318,79 +1492,106 @@
       return parseInt(die.replace('d', ''), 10) || 4;
     }
 
-    function getFinalAttributes() {
-      const attrs = { ...state.baseAttributes };
-      const tipoObj = TIPOS[state.tipo];
-      if (!state.freeMode && tipoObj && tipoObj.attrBonus) {
+    function getTraumaType(text) {
+      if (!text) return null;
+      const lower = text.toLowerCase();
+      if (lower.startsWith('4.') || lower.includes('redução de passo em atributo')) return 'attr';
+      if (lower.startsWith('5.') || lower.includes('redução de passo em perícia')) return 'skill';
+      return null;
+    }
+
+    function getFinalAttributes(charObj = state) {
+      const attrs = { ...charObj.baseAttributes };
+      const tipoObj = TIPOS[charObj.tipo];
+      if (!charObj.freeMode && tipoObj && tipoObj.attrBonus) {
         attrs[tipoObj.attrBonus] = stepUp(attrs[tipoObj.attrBonus], 1);
       }
-      // Apply attribute increases from General Abilities
       ['corpo', 'intelecto', 'alma'].forEach(k => {
-        if (state.attrDeltas[k]) {
-          attrs[k] = stepUp(attrs[k], state.attrDeltas[k]);
+        if (charObj.attrDeltas[k]) {
+          attrs[k] = stepUp(attrs[k], charObj.attrDeltas[k]);
         }
       });
+
+      // Apply Permanent Stress #4 (Attribute -1 step)
+      const targets = charObj.traumaTargets || ['', '', '', ''];
+      (charObj.permanentStress || []).forEach((txt, idx) => {
+        if (getTraumaType(txt) === 'attr' && targets[idx] && attrs[targets[idx]]) {
+          attrs[targets[idx]] = stepUp(attrs[targets[idx]], -1);
+        }
+      });
+
       return attrs;
     }
 
-    function getSelectedArchAbilities() {
-      const arch = ARQUETIPOS[state.arquetipo];
+    function getArchAbilityAcquisitionLevel(abilityId, charObj = state) {
+      const milestoneLevels = { lv1: 1, lv3: 3, lv7: 7, lv11: 11 };
+      for (const [key, reqLv] of Object.entries(milestoneLevels)) {
+        if (charObj.level >= reqLv && charObj.archAbilities[key] === abilityId) {
+          return reqLv;
+        }
+      }
+      return null;
+    }
+
+    function getSelectedArchAbilities(charObj = state) {
+      const arch = ARQUETIPOS[charObj.arquetipo];
       if (!arch) return [];
       const unlockedMilestones = ['lv1'];
-      if (state.level >= 3) unlockedMilestones.push('lv3');
-      if (state.level >= 7) unlockedMilestones.push('lv7');
-      if (state.level >= 11) unlockedMilestones.push('lv11');
+      if (charObj.level >= 3) unlockedMilestones.push('lv3');
+      if (charObj.level >= 7) unlockedMilestones.push('lv7');
+      if (charObj.level >= 11) unlockedMilestones.push('lv11');
 
       return unlockedMilestones
-        .map(m => state.archAbilities[m])
+        .map(m => charObj.archAbilities[m])
         .filter(Boolean)
         .map(id => arch.abilities.find(a => a.id === id))
         .filter(Boolean);
     }
 
-    function getSelectedGenAbilities() {
+    function getSelectedGenAbilities(charObj = state) {
       const milestones = ['lv2', 'lv4', 'lv5', 'lv8', 'lv9', 'lv12'];
       const reqLevels = { lv2: 2, lv4: 4, lv5: 5, lv8: 8, lv9: 9, lv12: 12 };
       return milestones
-        .filter(m => state.level >= reqLevels[m] && state.genAbilities[m])
-        .map(m => GENERAL_ABILITIES.find(g => g.id === state.genAbilities[m]))
+        .filter(m => charObj.level >= reqLevels[m] && charObj.genAbilities[m])
+        .map(m => GENERAL_ABILITIES.find(g => g.id === charObj.genAbilities[m]))
         .filter(Boolean);
     }
 
-    function hasArchAbility(id) {
-      return getSelectedArchAbilities().some(a => a.id === id);
+    function hasArchAbility(id, charObj = state) {
+      return getSelectedArchAbilities(charObj).some(a => a.id === id);
     }
 
-    function hasGenAbility(id) {
-      return getSelectedGenAbilities().some(g => g.id === id);
+    function hasGenAbility(id, charObj = state) {
+      return getSelectedGenAbilities(charObj).some(g => g.id === id);
     }
 
-    function countPermanentTraumas() {
-      return state.permanentStress.filter(s => s && s.trim() !== '').length;
+    function hasTraumaType(keyword, charObj = state) {
+      return charObj.permanentStress.some(s => s && s.toLowerCase().includes(keyword.toLowerCase()));
     }
 
-    function hasTraumaType(keyword) {
-      return state.permanentStress.some(s => s && s.toLowerCase().includes(keyword.toLowerCase()));
-    }
-
-    function getSkillDie(skillId) {
-      let baseStep = 0; // d4
-      const arch = ARQUETIPOS[state.arquetipo];
+    function getSkillDie(skillId, charObj = state, ignoreSkillTraumaSlotIdx = -1) {
+      let baseStep = 0;
+      const arch = ARQUETIPOS[charObj.arquetipo];
       if (arch && arch.skills[skillId]) {
         baseStep = DICE_STEPS.indexOf(arch.skills[skillId]);
       }
 
-      // Check Tipo initial choices (takes highest if overlaps)
-      if (state.tipoSkillChoices.d6.includes(skillId)) baseStep = Math.max(baseStep, 1);
-      if (state.tipoSkillChoices.d8.includes(skillId)) baseStep = Math.max(baseStep, 2);
-      if (state.tipoSkillChoices.d10.includes(skillId)) baseStep = Math.max(baseStep, 3);
+      if (charObj.tipoSkillChoices.d6.includes(skillId)) baseStep = Math.max(baseStep, 1);
+      if (charObj.tipoSkillChoices.d8.includes(skillId)) baseStep = Math.max(baseStep, 2);
+      if (charObj.tipoSkillChoices.d10.includes(skillId)) baseStep = Math.max(baseStep, 3);
 
-      // Apply manual/level-up deltas
-      const delta = state.skillDeltas[skillId] || 0;
+      const delta = charObj.skillDeltas[skillId] || 0;
       let finalIdx = Math.max(0, Math.min(DICE_STEPS.length - 1, baseStep + delta));
 
-      // Check Heavy Armor equipped penalty (-1 step Furtividade / Atletismo)
-      const heavyArmorEquipped = state.inventory.some(i => i.catalogId === 'protecao_pesada' && i.equipped);
+      // Apply Permanent Stress #5 (Trained Skill -1 step)
+      const targets = charObj.traumaTargets || ['', '', '', ''];
+      (charObj.permanentStress || []).forEach((txt, idx) => {
+        if (idx !== ignoreSkillTraumaSlotIdx && getTraumaType(txt) === 'skill' && targets[idx] === skillId) {
+          finalIdx = Math.max(0, finalIdx - 1);
+        }
+      });
+
+      const heavyArmorEquipped = charObj.inventory.some(i => i.catalogId === 'protecao_pesada' && i.equipped);
       if (heavyArmorEquipped && (skillId === 'furtividade' || skillId === 'atletismo')) {
         finalIdx = Math.max(0, finalIdx - 1);
       }
@@ -1398,27 +1599,32 @@
       return DICE_STEPS[finalIdx];
     }
 
-    function getDerivedStats() {
-      const attrs = getFinalAttributes();
-      const tipoObj = TIPOS[state.tipo];
+    function getDerivedStats(charObj = state) {
+      const attrs = getFinalAttributes(charObj);
+      const tipoObj = TIPOS[charObj.tipo];
       const maxCorpo = dieMax(attrs.corpo);
       const maxAlma = dieMax(attrs.alma);
 
       // PV Max
       let pvMax = maxCorpo + (tipoObj ? tipoObj.pvBase : 4);
       if (tipoObj) {
-        if (state.level >= 4) pvMax += tipoObj.pvStep;
-        if (state.level >= 8) pvMax += tipoObj.pvStep;
-        if (state.level >= 12) pvMax += tipoObj.pvStep;
-        if (state.level >= 10 && tipoObj.id === 'robusto') pvMax += 1;
+        if (charObj.level >= 4) pvMax += tipoObj.pvStep;
+        if (charObj.level >= 8) pvMax += tipoObj.pvStep;
+        if (charObj.level >= 12) pvMax += tipoObj.pvStep;
+        if (charObj.level >= 10 && tipoObj.id === 'robusto') pvMax += 1;
       }
-      if (hasArchAbility('forca_vontade')) {
-        pvMax += 4; // +2 neste nível e +2 no nível seguinte
+
+      // Força de Vontade (Perseverante): +2 no nível em que é pega e +2 no nível seguinte
+      const fwAcqLv = getArchAbilityAcquisitionLevel('forca_vontade', charObj);
+      if (fwAcqLv !== null) {
+        const fwBonus = charObj.level >= fwAcqLv + 1 ? 4 : 2;
+        pvMax += fwBonus;
       }
-      if (hasGenAbility('casca_grossa')) {
+
+      if (hasGenAbility('casca_grossa', charObj)) {
         pvMax += 3;
       }
-      if (hasTraumaType('pv')) {
+      if (hasTraumaType('pv', charObj)) {
         pvMax -= 2;
       }
       pvMax = Math.max(1, pvMax);
@@ -1426,14 +1632,15 @@
       // PC Max
       let pcMax = maxAlma + (tipoObj ? tipoObj.pcBase : 3);
       if (tipoObj) {
-        if (state.level >= 4) pcMax += tipoObj.pcStep;
-        if (state.level >= 8) pcMax += tipoObj.pcStep;
-        if (state.level >= 12) pcMax += tipoObj.pcStep;
+        if (charObj.level >= 4) pcMax += tipoObj.pcStep;
+        if (charObj.level >= 8) pcMax += tipoObj.pcStep;
+        if (charObj.level >= 12) pcMax += tipoObj.pcStep;
       }
-      if (hasArchAbility('forca_vontade')) {
-        pcMax += 4;
+      if (fwAcqLv !== null) {
+        const fwBonus = charObj.level >= fwAcqLv + 1 ? 4 : 2;
+        pcMax += fwBonus;
       }
-      if (hasTraumaType('pc')) {
+      if (hasTraumaType('pc', charObj)) {
         pcMax -= 2;
       }
       pcMax = Math.max(1, pcMax);
@@ -1444,7 +1651,7 @@
       let ppPerm = 0;
       let ppTemp = 0;
 
-      state.inventory.forEach(item => {
+      charObj.inventory.forEach(item => {
         if (item.equipped) {
           if (item.guardaBonus) {
             guarda += item.guardaBonus;
@@ -1455,8 +1662,7 @@
         }
       });
 
-      // Conditions modifiers
-      state.conditions.forEach(cId => {
+      charObj.conditions.forEach(cId => {
         const cObj = CONDITIONS_DATA.find(c => c.id === cId);
         if (cObj && cObj.guardaMod) {
           guarda += cObj.guardaMod;
@@ -1464,17 +1670,15 @@
         }
       });
 
-      // Slots calculation
-      const slotsInfo = calculateSlots();
+      const slotsInfo = calculateSlots(charObj);
 
-      // Speed (Deslocamento)
-      let speed = hasArchAbility('passos_largos') ? 12 : 9;
+      let speed = hasArchAbility('passos_largos', charObj) ? 12 : 9;
       const isOverloaded = slotsInfo.used > slotsInfo.max;
-      const hasZeroSpeedCond = state.conditions.some(cId => {
+      const hasZeroSpeedCond = charObj.conditions.some(cId => {
         const cObj = CONDITIONS_DATA.find(c => c.id === cId);
         return cObj && cObj.speedZero;
       });
-      const hasHalfSpeedCond = state.conditions.some(cId => {
+      const hasHalfSpeedCond = charObj.conditions.some(cId => {
         const cObj = CONDITIONS_DATA.find(c => c.id === cId);
         return cObj && cObj.halfSpeed;
       });
@@ -1485,8 +1689,7 @@
         speed = Math.floor(speed / 2);
       }
 
-      // Max Willpower
-      const maxWill = hasTraumaType('vontade') ? 2 : 3;
+      const maxWill = hasTraumaType('vontade', charObj) ? 2 : 3;
 
       return {
         attrs,
@@ -1502,19 +1705,18 @@
       };
     }
 
-    function calculateSlots() {
+    function calculateSlots(charObj = state) {
       let max = 20;
-      if (hasGenAbility('mochileiro')) max += 4;
-      const hasTacBackpack = state.inventory.some(i => i.catalogId === 'mochila_tatica');
+      if (hasGenAbility('mochileiro', charObj)) max += 4;
+      const hasTacBackpack = charObj.inventory.some(i => i.catalogId === 'mochila_tatica');
       if (hasTacBackpack) max += 2;
 
-      const hasQuiver = state.inventory.some(i => i.catalogId === 'aljava');
-      const hasStonePouch = state.inventory.some(i => i.catalogId === 'bolsa_pedras');
+      const hasQuiver = charObj.inventory.some(i => i.catalogId === 'aljava');
+      const hasStonePouch = charObj.inventory.some(i => i.catalogId === 'bolsa_pedras');
 
       let used = 0;
-      state.inventory.forEach(item => {
+      charObj.inventory.forEach(item => {
         if (item.inHolster) {
-          // Coldre/Bainha equips 1 light weapon with 0 slots
           used += 0;
           return;
         }
@@ -1536,12 +1738,35 @@
     }
 
     // =========================================================================
-    // 4. RENDERING & UI UPDATES
+    // 4. INITIALIZATION & PWA REGISTRATION
     // =========================================================================
     function init() {
       populateArquetiposSelect();
-      loadFromStorage();
-      renderAll();
+      loadLibraryAndPrefs();
+      registerPWA();
+      renderView();
+    }
+
+    function registerPWA() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById('pwa-install-btn');
+        if (btn) btn.classList.remove('hidden');
+      });
+    }
+
+    async function triggerPWAInstall() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('pwa-install-btn').classList.add('hidden');
+      }
+      deferredInstallPrompt = null;
     }
 
     function populateArquetiposSelect() {
@@ -1558,15 +1783,283 @@
       });
     }
 
-    function renderAll() {
-      const stats = getDerivedStats();
+    function loadLibraryAndPrefs() {
+      try {
+        const prefsRaw = localStorage.getItem(PREFS_KEY);
+        if (prefsRaw) {
+          const prefs = JSON.parse(prefsRaw);
+          darkMode = !!prefs.darkMode;
+        }
 
-      // Theme
-      if (state.darkMode) {
-        document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
+        const libRaw = localStorage.getItem(LIBRARY_KEY);
+        if (libRaw) {
+          library = JSON.parse(libRaw);
+        } else {
+          const legacyRaw = localStorage.getItem('declinio_rpg_sheet_v1');
+          if (legacyRaw) {
+            const oldChar = JSON.parse(legacyRaw);
+            const migrated = { ...createBlankSurvivor(), ...oldChar };
+            library = [migrated];
+            saveLibrary();
+          }
+        }
+      } catch (e) {
+        console.error(e);
       }
+    }
+
+    function saveLibrary() {
+      try {
+        localStorage.setItem(LIBRARY_KEY, JSON.stringify(library));
+        localStorage.setItem(PREFS_KEY, JSON.stringify({ darkMode }));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function syncActiveCharacterToLibrary() {
+      if (!state || !activeCharId) return;
+      state.updatedAt = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+      const idx = library.findIndex(c => c.id === activeCharId);
+      if (idx !== -1) {
+        library[idx] = state;
+      } else {
+        library.unshift(state);
+      }
+      saveLibrary();
+    }
+
+    // =========================================================================
+    // 5. LIBRARY ACTIONS & RENDERING
+    // =========================================================================
+    function renderView() {
+      document.body.classList.toggle('dark-mode', darkMode);
+
+      if (currentView === 'library') {
+        document.getElementById('library-view').classList.remove('hidden');
+        document.getElementById('sheet-view').classList.add('hidden');
+        renderLibrary();
+      } else {
+        document.getElementById('library-view').classList.add('hidden');
+        document.getElementById('sheet-view').classList.remove('hidden');
+        renderSheet();
+      }
+    }
+
+    function renderLibrary() {
+      const listEl = document.getElementById('library-list');
+      const emptyEl = document.getElementById('library-empty');
+      const badgeEl = document.getElementById('library-count-badge');
+
+      badgeEl.textContent = `${library.length} ${library.length === 1 ? 'ficha' : 'fichas'}`;
+
+      if (library.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+
+      listEl.innerHTML = library.map(char => {
+        const displayName = char.name && char.name.trim() ? char.name.trim() : 'Sobrevivente Sem Nome';
+        const initial = displayName.charAt(0).toUpperCase();
+        const tipoName = TIPOS[char.tipo]?.name || 'Tipo indef.';
+        const archName = ARQUETIPOS[char.arquetipo]?.name || 'Sem Arquétipo';
+        const estiloName = ESTILOS[char.estilo]?.name || 'Estilo indef.';
+        const stats = getDerivedStats(char);
+
+        return `
+          <div class="dossier-card p-3.5 sm:p-4 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-[3px_3px_0px_var(--border-main)] transition-shadow">
+            <div class="flex items-center gap-3.5 min-w-0 cursor-pointer flex-1" onclick="openCharacterFromLibrary('${char.id}')">
+              <div class="w-12 h-12 shrink-0 border-2 border-current bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-mono text-xl font-black rounded-sm">
+                ${initial}
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-base sm:text-lg font-black truncate">${displayName}</h3>
+                <p class="font-mono text-xs opacity-80 truncate">
+                  ${tipoName} • ${archName} • ${estiloName}
+                </p>
+                <div class="flex flex-wrap items-center gap-2 mt-1 font-mono text-[10px] opacity-70">
+                  <span>PV: <b>${char.pvCurrent}/${stats.pvMax}</b></span>
+                  <span>•</span>
+                  <span>PC: <b>${char.pcCurrent}/${stats.pcMax}</b></span>
+                  <span>•</span>
+                  <span>Guarda: <b>${stats.guarda}</b></span>
+                  <span>•</span>
+                  <span>Registrado em ${char.createdAt || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-dashed border-current shrink-0">
+              <span class="font-mono text-xs font-black px-2 py-1 border border-current mr-1">
+                Nv. ${char.level}
+              </span>
+              <button onclick="openCharacterFromLibrary('${char.id}')" class="btn-tactical-solid px-3 py-1.5 text-xs rounded-sm">
+                Acessar Ficha
+              </button>
+              <button onclick="exportSingleFromLibrary('${char.id}')" class="btn-tactical w-8 h-8 text-xs rounded-sm flex items-center justify-center" title="Exportar JSON deste sobrevivente">
+                ↓
+              </button>
+              <button onclick="duplicateCharacterInLibrary('${char.id}')" class="btn-tactical w-8 h-8 text-xs rounded-sm flex items-center justify-center" title="Duplicar sobrevivente">
+                ⧉
+              </button>
+              <button onclick="askDeleteCharacter('${char.id}')" class="btn-tactical w-8 h-8 text-xs rounded-sm flex items-center justify-center hover:!bg-red-800 hover:!border-red-800 hover:!text-white" title="Excluir sobrevivente">
+                ✕
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function createNewCharacterInLibrary() {
+      const fresh = createBlankSurvivor('');
+      library.unshift(fresh);
+      saveLibrary();
+      openCharacterFromLibrary(fresh.id);
+      showToast('Nova ficha de sobrevivente criada.');
+    }
+
+    function createRicardoInLibrary() {
+      const ric = buildRicardoCharacter();
+      library.unshift(ric);
+      saveLibrary();
+      renderView();
+      showToast('Ricardo Gomes adicionado à biblioteca!');
+    }
+
+    function openCharacterFromLibrary(charId) {
+      const found = library.find(c => c.id === charId);
+      if (!found) return;
+      activeCharId = found.id;
+      state = { ...createBlankSurvivor(), ...found };
+      if (!Array.isArray(state.traumaTargets)) state.traumaTargets = ['', '', '', ''];
+      currentView = 'sheet';
+      renderView();
+    }
+
+    function returnToLibrary() {
+      syncActiveCharacterToLibrary();
+      activeCharId = null;
+      state = null;
+      currentView = 'library';
+      renderView();
+    }
+
+    function duplicateCharacterInLibrary(charId) {
+      const found = library.find(c => c.id === charId);
+      if (!found) return;
+      const copy = JSON.parse(JSON.stringify(found));
+      copy.id = 'surv_' + Date.now() + '_' + Math.random().toString(16).slice(2, 6);
+      copy.name = (copy.name || 'Sobrevivente') + ' (Cópia)';
+      copy.createdAt = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+      library.unshift(copy);
+      saveLibrary();
+      renderView();
+      showToast(`Ficha duplicada: "${copy.name}".`);
+    }
+
+    function askDeleteCharacter(charId) {
+      const found = library.find(c => c.id === charId);
+      if (!found) return;
+      deleteTargetId = charId;
+      document.getElementById('confirm-delete-text').textContent = `Tem certeza que deseja excluir "${found.name || 'Sobrevivente Sem Nome'}" permanentemente?`;
+      document.getElementById('confirm-delete-modal').classList.remove('hidden');
+      document.getElementById('confirm-delete-modal').classList.add('flex');
+    }
+
+    function closeConfirmDelete() {
+      deleteTargetId = null;
+      document.getElementById('confirm-delete-modal').classList.add('hidden');
+      document.getElementById('confirm-delete-modal').classList.remove('flex');
+    }
+
+    function confirmDeleteCharacter() {
+      if (!deleteTargetId) return;
+      library = library.filter(c => c.id !== deleteTargetId);
+      saveLibrary();
+      closeConfirmDelete();
+      renderView();
+      showToast('Sobrevivente removido da biblioteca.');
+    }
+
+    function exportSingleFromLibrary(charId) {
+      const found = library.find(c => c.id === charId);
+      if (!found) return;
+      downloadJSON(found, (found.name || 'sobrevivente_declinio').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json');
+    }
+
+    function exportCurrentJSON() {
+      if (!state) return;
+      syncActiveCharacterToLibrary();
+      downloadJSON(state, (state.name || 'sobrevivente_declinio').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json');
+    }
+
+    function exportAllJSON() {
+      if (library.length === 0) {
+        showToast('Biblioteca vazia para exportar.');
+        return;
+      }
+      downloadJSON({ system: 'DECLINIO_RPG_ALFA_01', characters: library }, 'biblioteca_declinio_rpg.json');
+    }
+
+    function downloadJSON(obj, filename) {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(obj, null, 2));
+      const dl = document.createElement('a');
+      dl.setAttribute('href', dataStr);
+      dl.setAttribute('download', filename);
+      document.body.appendChild(dl);
+      dl.click();
+      dl.remove();
+      showToast(`Arquivo "${filename}" exportado!`);
+    }
+
+    function importJSONToLibrary(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          let importedList = [];
+          if (Array.isArray(parsed)) {
+            importedList = parsed;
+          } else if (parsed && Array.isArray(parsed.characters)) {
+            importedList = parsed.characters;
+          } else if (parsed && typeof parsed === 'object') {
+            importedList = [parsed];
+          }
+
+          if (importedList.length === 0) {
+            showToast('Nenhuma ficha encontrada no arquivo.');
+            return;
+          }
+
+          importedList.forEach(item => {
+            const clean = { ...createBlankSurvivor(), ...item };
+            clean.id = 'surv_' + Date.now() + '_' + Math.random().toString(16).slice(2, 6);
+            library.unshift(clean);
+          });
+
+          saveLibrary();
+          renderView();
+          showToast(`${importedList.length} sobrevivente(s) importado(s) para a biblioteca!`);
+        } catch (err) {
+          showToast('Erro ao importar JSON: arquivo inválido.');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // =========================================================================
+    // 6. SHEET RENDERING & TACTICAL ABILITY SELECTION POPUP
+    // =========================================================================
+    function renderSheet() {
+      if (!state) return;
+      const stats = getDerivedStats();
 
       // Page visibility
       document.getElementById('page-1').classList.toggle('hidden', state.activePage !== 1);
@@ -1599,9 +2092,20 @@
         : 'Define sua ordem natural na iniciativa e habilidades de Nível 1 e 6.';
 
       const archObj = ARQUETIPOS[state.arquetipo];
-      document.getElementById('arquetipo-summary').textContent = archObj
-        ? `Perícias treinadas concedidas automaticamente na grade abaixo.`
-        : 'Concede 2 perícias treinadas (d8 e d6) e habilidades nos níveis 1, 3, 7 e 11.';
+      const archBtn = document.getElementById('btn-open-arch-modal');
+      if (archObj) {
+        archBtn.classList.remove('hidden');
+        const chosenLv1 = archObj.abilities.find(a => a.id === state.archAbilities.lv1);
+        document.getElementById('arquetipo-summary').textContent = chosenLv1
+          ? `Nv. 1: ${chosenLv1.name} (clique em "Escolher Hab." para trocar).`
+          : `Perícias treinadas aplicadas! Clique em "Escolher Hab." para selecionar sua habilidade de Nível 1.`;
+      } else {
+        archBtn.classList.add('hidden');
+        document.getElementById('arquetipo-summary').textContent = 'Concede 2 perícias treinadas (d8 e d6) e habilidades nos níveis 1, 3, 7 e 11.';
+      }
+
+      // Check Pending Ability Choices Banner
+      renderPendingAbilitiesBanner();
 
       // Level Milestone Hints
       const milestonesText = {
@@ -1650,19 +2154,178 @@
       document.getElementById('stat-speed').textContent = `${stats.speed}m`;
       document.getElementById('speed-squares').textContent = `${Math.floor(stats.speed / 1.5)} quad.`;
 
-      // Stress & Willpower
       renderStressAndWill(stats.maxWill);
-
-      // Conditions
       renderConditions();
-
-      // Skills (26)
       renderSkills();
-
-      // Page 2: Abilities, Permanent Stress, Inventory
       renderAbilitiesPage();
       renderPermanentStress();
       renderInventory(stats.slotsInfo);
+    }
+
+    function getPendingChoices() {
+      const pending = [];
+      if (state.arquetipo) {
+        const archSlots = [
+          { key: 'lv1', req: 1, label: 'Arquétipo (Nv. 1)' },
+          { key: 'lv3', req: 3, label: 'Arquétipo (Nv. 3)' },
+          { key: 'lv7', req: 7, label: 'Arquétipo (Nv. 7)' },
+          { key: 'lv11', req: 11, label: 'Arquétipo (Nv. 11)' }
+        ];
+        archSlots.forEach(s => {
+          if (state.level >= s.req && !state.archAbilities[s.key]) {
+            pending.push({ kind: 'arch', key: s.key, label: s.label });
+          }
+        });
+      }
+
+      const genSlots = [
+        { key: 'lv2', req: 2, label: 'Hab. Geral (Nv. 2)' },
+        { key: 'lv4', req: 4, label: 'Hab. Geral (Nv. 4)' },
+        { key: 'lv5', req: 5, label: 'Hab. Geral (Nv. 5)' },
+        { key: 'lv8', req: 8, label: 'Hab. Geral (Nv. 8)' },
+        { key: 'lv9', req: 9, label: 'Hab. Geral (Nv. 9)' },
+        { key: 'lv12', req: 12, label: 'Hab. Geral (Nv. 12)' }
+      ];
+      genSlots.forEach(s => {
+        if (state.level >= s.req && !state.genAbilities[s.key]) {
+          pending.push({ kind: 'gen', key: s.key, label: s.label });
+        }
+      });
+
+      return pending;
+    }
+
+    function renderPendingAbilitiesBanner() {
+      const banner = document.getElementById('pending-abilities-banner');
+      const btnsEl = document.getElementById('pending-abilities-buttons');
+      const pending = getPendingChoices();
+
+      if (pending.length === 0) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+      btnsEl.innerHTML = pending.map(p => `
+        <button onclick="openAbilityModal('${p.kind}', '${p.key}')" class="btn-tactical-solid px-2.5 py-1 text-[10px] rounded-sm">
+          Escolher: ${p.label}
+        </button>
+      `).join('');
+    }
+
+    // POP-UP MODAL PARA ESCOLHA DE HABILIDADES
+    function openAbilityModal(kind, milestoneKey) {
+      modalContext = { kind, milestoneKey };
+      const modal = document.getElementById('ability-select-modal');
+      const kicker = document.getElementById('ability-modal-kicker');
+      const title = document.getElementById('ability-modal-title');
+      const subtitle = document.getElementById('ability-modal-subtitle');
+      const container = document.getElementById('ability-modal-options');
+
+      const reqLevel = parseInt(milestoneKey.replace('lv', ''), 10);
+
+      if (kind === 'arch') {
+        const archObj = ARQUETIPOS[state.arquetipo];
+        if (!archObj) {
+          showToast('Selecione primeiro um Arquétipo.');
+          return;
+        }
+        kicker.textContent = `ARQUÉTIPO: ${archObj.name.toUpperCase()} // MARCO DE NÍVEL ${reqLevel}`;
+        title.textContent = `ESCOLHER HABILIDADE DE ${archObj.name.toUpperCase()}`;
+        subtitle.textContent = `Selecione uma das 4 habilidades exclusivas abaixo. Após escolhida, ela será adicionada à lista da Página 02.`;
+
+        const currentSelected = state.archAbilities[milestoneKey];
+        const alreadyChosenOthers = Object.entries(state.archAbilities)
+          .filter(([k]) => k !== milestoneKey)
+          .map(([, v]) => v);
+
+        container.innerHTML = archObj.abilities.map(ab => {
+          const isCurrent = currentSelected === ab.id;
+          const isTaken = alreadyChosenOthers.includes(ab.id);
+
+          return `
+            <div class="dossier-card p-3.5 rounded-sm flex flex-col justify-between gap-3 ${isCurrent ? 'border-2 border-current ring-1 ring-current' : ''} ${isTaken ? 'opacity-50' : ''}">
+              <div>
+                <div class="flex items-start justify-between gap-2 mb-1.5">
+                  <h4 class="font-mono text-sm font-black uppercase">${ab.name}</h4>
+                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 dossier-box shrink-0">${ab.cost}</span>
+                </div>
+                <p class="text-xs leading-relaxed">${ab.desc}</p>
+              </div>
+              <div class="pt-1 flex justify-end">
+                <button onclick="confirmModalAbilitySelection('${ab.id}')" ${isTaken ? 'disabled' : ''} class="${isCurrent ? 'btn-tactical' : 'btn-tactical-solid'} w-full py-2 text-xs rounded-sm">
+                  ${isTaken ? 'Já Adquirida em Outro Nível' : (isCurrent ? '✓ Habilidade Atual (Manter)' : 'Escolher Habilidade')}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } else if (kind === 'gen') {
+        kicker.textContent = `SOBREVIVÊNCIA NA PRÁTICA // MARCO DE NÍVEL ${reqLevel}`;
+        title.textContent = `ESCOLHER HABILIDADE GERAL (NÍVEL ${reqLevel})`;
+        subtitle.textContent = `Selecione um talento adquirido na prática brutal da sobrevivência (pré-requisitos verificados automaticamente).`;
+
+        const currentSelected = state.genAbilities[milestoneKey];
+
+        container.innerHTML = GENERAL_ABILITIES.map(g => {
+          const isCurrent = currentSelected === g.id;
+          const valid = checkGenPrereq(g, milestoneKey);
+
+          return `
+            <div class="dossier-card p-3.5 rounded-sm flex flex-col justify-between gap-3 ${isCurrent ? 'border-2 border-current ring-1 ring-current' : ''} ${!valid && !isCurrent ? 'opacity-50' : ''}">
+              <div>
+                <div class="flex items-start justify-between gap-2 mb-1">
+                  <h4 class="font-mono text-sm font-black uppercase">${g.name}</h4>
+                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 dossier-box shrink-0">${g.prereqText}</span>
+                </div>
+                <p class="text-xs leading-relaxed">${g.desc}</p>
+              </div>
+              <div class="pt-1 flex justify-end">
+                <button onclick="confirmModalAbilitySelection('${g.id}')" ${!valid && !isCurrent ? 'disabled' : ''} class="${isCurrent ? 'btn-tactical' : 'btn-tactical-solid'} w-full py-2 text-xs rounded-sm">
+                  ${!valid && !isCurrent ? 'Pré-Requisito Não Cumprido' : (isCurrent ? '✓ Habilidade Atual (Manter)' : 'Escolher Habilidade Geral')}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAbilityModal() {
+      document.getElementById('ability-select-modal').classList.add('hidden');
+      document.getElementById('ability-select-modal').classList.remove('flex');
+      modalContext = { kind: null, milestoneKey: null };
+    }
+
+    function confirmModalAbilitySelection(selectedId) {
+      const { kind, milestoneKey } = modalContext;
+      if (!kind || !milestoneKey) return;
+
+      const oldStats = getDerivedStats();
+
+      if (kind === 'arch') {
+        state.archAbilities[milestoneKey] = selectedId;
+        const archObj = ARQUETIPOS[state.arquetipo];
+        const ab = archObj?.abilities.find(a => a.id === selectedId);
+        showToast(`Habilidade "${ab?.name}" adicionada à ficha!`);
+      } else if (kind === 'gen') {
+        state.genAbilities[milestoneKey] = selectedId;
+        const gen = GENERAL_ABILITIES.find(g => g.id === selectedId);
+        showToast(`Habilidade Geral "${gen?.name}" adicionada à ficha!`);
+      }
+
+      const newStats = getDerivedStats();
+      const pvDiff = newStats.pvMax - oldStats.pvMax;
+      const pcDiff = newStats.pcMax - oldStats.pcMax;
+      if (pvDiff !== 0) state.pvCurrent = Math.max(0, Math.min(newStats.pvMax, state.pvCurrent + pvDiff));
+      if (pcDiff !== 0) state.pcCurrent = Math.max(0, Math.min(newStats.pcMax, state.pcCurrent + pcDiff));
+
+      closeAbilityModal();
+      saveAndRender();
     }
 
     function formatSkillGrantText(grants) {
@@ -1684,7 +2347,6 @@
         { id: 'alma', label: 'ALMA', sub: 'Carisma, presença, força mental' }
       ];
 
-      // Check official base pool validity [d8, d8, d6]
       const baseVals = Object.values(state.baseAttributes).sort();
       const validPool = JSON.stringify(baseVals) === JSON.stringify(['d6', 'd8', 'd8']);
       const helper = document.getElementById('attr-helper-text');
@@ -1697,20 +2359,23 @@
       }
 
       const tipoObj = TIPOS[state.tipo];
+      const targets = state.traumaTargets || ['', '', '', ''];
 
       container.innerHTML = attrList.map(a => {
         const isTipoBonus = !state.freeMode && tipoObj && tipoObj.attrBonus === a.id;
         const baseDie = state.baseAttributes[a.id];
         const finalDie = finalAttrs[a.id];
         const options = state.freeMode ? DICE_STEPS : ['d6', 'd8'];
+        const hasAttrTrauma = (state.permanentStress || []).some((txt, idx) => getTraumaType(txt) === 'attr' && targets[idx] === a.id);
 
         return `
           <div class="dossier-card p-2 rounded-sm flex items-center justify-between gap-2">
             <div>
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="font-mono text-sm font-black tracking-wide">${a.label}</span>
                 ${isTipoBonus ? `<span class="font-mono text-[9px] px-1 border border-current font-bold">+1 TIPO</span>` : ''}
                 ${state.attrDeltas[a.id] > 0 ? `<span class="font-mono text-[9px] px-1 border border-current font-bold">+${state.attrDeltas[a.id]} NV</span>` : ''}
+                ${hasAttrTrauma ? `<span class="font-mono text-[9px] px-1 bg-red-800 text-white font-bold">-1 SEQUELA</span>` : ''}
               </div>
               <span class="block text-[10px] opacity-70">${a.sub}</span>
             </div>
@@ -1728,7 +2393,6 @@
     }
 
     function renderStressAndWill(maxWill) {
-      // Stress Pips (6)
       const stressContainer = document.getElementById('stress-pips-container');
       document.getElementById('stress-count-label').textContent = `${state.stress} / 6`;
       stressContainer.innerHTML = '';
@@ -1742,7 +2406,6 @@
         stressContainer.appendChild(pip);
       }
 
-      // Willpower Pips (maxWill: 3 or 2)
       document.getElementById('will-max-label').textContent = maxWill;
       if (state.willpower > maxWill) state.willpower = maxWill;
       document.getElementById('will-count-label').textContent = `${state.willpower} / ${maxWill}`;
@@ -1787,8 +2450,8 @@
       const categories = ['TÉCNICAS', 'SOCIAIS', 'COMBATE', 'GERAIS'];
       const arch = ARQUETIPOS[state.arquetipo];
       const tipoObj = TIPOS[state.tipo];
+      const targets = state.traumaTargets || ['', '', '', ''];
 
-      // Skill budget tracker
       const tracker = document.getElementById('skill-budget-tracker');
       if (tipoObj) {
         const g = tipoObj.skillGrants;
@@ -1818,8 +2481,8 @@
                 const isTipoD6 = state.tipoSkillChoices.d6.includes(skill.id);
                 const isTipoD8 = state.tipoSkillChoices.d8.includes(skill.id);
                 const isTipoD10 = state.tipoSkillChoices.d10.includes(skill.id);
+                const hasSkillTrauma = (state.permanentStress || []).some((txt, idx) => getTraumaType(txt) === 'skill' && targets[idx] === skill.id);
 
-                // Subsystem info
                 let subInfo = '';
                 const maxVal = dieMax(die);
                 if (skill.subsystem === 'lockpick') {
@@ -1837,6 +2500,7 @@
                         <span class="text-xs font-bold truncate">${skill.name}</span>
                         ${archDie ? `<span class="font-mono text-[9px] px-1 border border-current font-bold" title="Concedida pelo Arquétipo">ARQ</span>` : ''}
                         ${(isTipoD6 || isTipoD8 || isTipoD10) ? `<span class="font-mono text-[9px] px-1 border border-current font-bold" title="Escolhida pelo Tipo">TIPO</span>` : ''}
+                        ${hasSkillTrauma ? `<span class="font-mono text-[9px] px-1 bg-red-800 text-white font-bold" title="Reduzida por Sequela Permanente">-1 SEQ</span>` : ''}
                       </div>
                       ${subInfo ? `<span class="block font-mono text-[9px] opacity-70">${subInfo}</span>` : ''}
                     </div>
@@ -1872,7 +2536,7 @@
       const container = document.getElementById('abilities-list');
       const blocks = [];
 
-      // 1. TIPO ABILITY (Nv 1 & Nv 10)
+      // 1. TIPO ABILITY
       const tipoObj = TIPOS[state.tipo];
       if (tipoObj) {
         blocks.push(`
@@ -1894,7 +2558,7 @@
         `);
       }
 
-      // 2. ESTILO ABILITIES (Nv 1 & Nv 6)
+      // 2. ESTILO ABILITIES
       const estiloObj = ESTILOS[state.estilo];
       if (estiloObj) {
         blocks.push(`
@@ -1932,7 +2596,7 @@
         }
       }
 
-      // 3. ARQUÉTIPO ABILITIES (Nv 1, 3, 7, 11)
+      // 3. ARQUÉTIPO ABILITIES (CLEAN LIST + "ALTERAR" BUTTON OPENING POPUP)
       const archObj = ARQUETIPOS[state.arquetipo];
       if (archObj) {
         const archMilestones = [
@@ -1946,39 +2610,50 @@
           if (state.level >= m.req) {
             const chosenId = state.archAbilities[m.key];
             const chosenAb = archObj.abilities.find(a => a.id === chosenId);
-            const alreadyChosenIds = Object.entries(state.archAbilities)
-              .filter(([k]) => k !== m.key)
-              .map(([, v]) => v);
 
-            blocks.push(`
-              <div class="dossier-card p-3 rounded-sm">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
-                  <div class="flex items-center gap-2">
-                    <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">${m.label}</span>
-                    <h4 class="font-mono text-sm font-black uppercase">${chosenAb ? chosenAb.name : 'Escolha uma Habilidade de ' + archObj.name}</h4>
+            if (chosenAb) {
+              const isFW = chosenAb.id === 'forca_vontade';
+              const fwStatus = isFW
+                ? (state.level >= m.req + 1 ? 'Bônus ativo: +4 PV e +4 PC máximos' : `Bônus ativo: +2 PV e +2 PC máximos (+2/+2 no Nv. ${m.req + 1})`)
+                : '';
+
+              blocks.push(`
+                <div class="dossier-card p-3 rounded-sm">
+                  <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">${m.label}</span>
+                      <h4 class="font-mono text-sm font-black uppercase">${chosenAb.name}</h4>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <span class="font-mono text-[11px] font-bold opacity-80">Custo: ${chosenAb.cost}</span>
+                      ${renderQuickCostButton(chosenAb)}
+                      <button onclick="openAbilityModal('arch', '${m.key}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print">
+                        Alterar
+                      </button>
+                    </div>
                   </div>
-                  <select onchange="selectArchAbility('${m.key}', this.value)" class="dossier-input font-mono text-xs px-2 py-1 rounded-sm no-print">
-                    <option value="">-- Selecionar Habilidade --</option>
-                    ${archObj.abilities.map(ab => `
-                      <option value="${ab.id}" ${chosenId === ab.id ? 'selected' : ''} ${alreadyChosenIds.includes(ab.id) ? 'disabled' : ''}>
-                        ${ab.name} (${ab.cost})
-                      </option>
-                    `).join('')}
-                  </select>
+                  <p class="text-xs leading-relaxed">${chosenAb.desc}</p>
+                  ${fwStatus ? `<p class="font-mono text-[10px] font-bold mt-1 opacity-85">${fwStatus}</p>` : ''}
                 </div>
-                ${chosenAb ? `
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs leading-relaxed">${chosenAb.desc}</p>
-                    ${renderQuickCostButton(chosenAb)}
+              `);
+            } else {
+              blocks.push(`
+                <div class="dossier-card p-3 rounded-sm border-dashed flex items-center justify-between gap-2">
+                  <div>
+                    <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">${m.label}</span>
+                    <span class="font-mono text-xs font-bold ml-2">Nenhuma habilidade selecionada para este marco</span>
                   </div>
-                ` : `<p class="text-xs italic opacity-65">Selecione uma das 4 opções exclusivas de ${archObj.name} acima.</p>`}
-              </div>
-            `);
+                  <button onclick="openAbilityModal('arch', '${m.key}')" class="btn-tactical-solid px-3 py-1.5 text-[10px] rounded-sm no-print">
+                    Escolher Habilidade
+                  </button>
+                </div>
+              `);
+            }
           }
         });
       }
 
-      // 4. HABILIDADES GERAIS (Nv 2, 4, 5, 8, 9, 12)
+      // 4. HABILIDADES GERAIS (CLEAN LIST + "ALTERAR" BUTTON OPENING POPUP)
       const genMilestones = [
         { key: 'lv2', req: 2 },
         { key: 'lv4', req: 4 },
@@ -1993,36 +2668,43 @@
           const chosenId = state.genAbilities[m.key];
           const chosenGen = GENERAL_ABILITIES.find(g => g.id === chosenId);
 
-          blocks.push(`
-            <div class="dossier-card p-3 rounded-sm">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
-                <div class="flex items-center gap-2">
-                  <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">HAB. GERAL // NV. ${m.req}</span>
-                  <h4 class="font-mono text-sm font-black uppercase">${chosenGen ? chosenGen.name : 'Escolha uma Habilidade Geral'}</h4>
+          if (chosenGen) {
+            blocks.push(`
+              <div class="dossier-card p-3 rounded-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">HAB. GERAL // NV. ${m.req}</span>
+                    <h4 class="font-mono text-sm font-black uppercase">${chosenGen.name}</h4>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[10px] opacity-75">[${chosenGen.prereqText}]</span>
+                    <button onclick="openAbilityModal('gen', '${m.key}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print">
+                      Alterar
+                    </button>
+                  </div>
                 </div>
-                <select onchange="selectGenAbility('${m.key}', this.value)" class="dossier-input font-mono text-xs px-2 py-1 rounded-sm no-print">
-                  <option value="">-- Selecionar Habilidade Geral --</option>
-                  ${GENERAL_ABILITIES.map(g => {
-                    const valid = checkGenPrereq(g, m.key);
-                    return `
-                      <option value="${g.id}" ${chosenId === g.id ? 'selected' : ''} ${!valid && chosenId !== g.id ? 'disabled' : ''}>
-                        ${g.name} [${g.prereqText}] ${!valid && chosenId !== g.id ? '(Req. não cumprido)' : ''}
-                      </option>
-                    `;
-                  }).join('')}
-                </select>
-              </div>
-              ${chosenGen ? `
                 <p class="text-xs leading-relaxed">${chosenGen.desc}</p>
                 ${chosenGen.id === 'aumento_atributo' ? renderAttrBoostControls() : ''}
-              ` : `<p class="text-xs italic opacity-65">Desbloqueada no nível ${m.req}. Selecione no menu acima.</p>`}
-            </div>
-          `);
+              </div>
+            `);
+          } else {
+            blocks.push(`
+              <div class="dossier-card p-3 rounded-sm border-dashed flex items-center justify-between gap-2">
+                <div>
+                  <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">HAB. GERAL // NV. ${m.req}</span>
+                  <span class="font-mono text-xs font-bold ml-2">Escolha de Habilidade Geral disponível</span>
+                </div>
+                <button onclick="openAbilityModal('gen', '${m.key}')" class="btn-tactical-solid px-3 py-1.5 text-[10px] rounded-sm no-print">
+                  Escolher Habilidade Geral
+                </button>
+              </div>
+            `);
+          }
         }
       });
 
       if (blocks.length === 0) {
-        container.innerHTML = `<p class="text-xs font-mono opacity-65 py-4 text-center">Selecione um Tipo, Estilo e Arquétipo na Página 01 para visualizar e configurar suas habilidades.</p>`;
+        container.innerHTML = `<p class="text-xs font-mono opacity-65 py-4 text-center">Selecione um Tipo, Estilo e Arquétipo na Página 01 para visualizar suas habilidades.</p>`;
       } else {
         container.innerHTML = blocks.join('');
       }
@@ -2032,10 +2714,10 @@
       const pcMatch = ab.cost.match(/^(\d+)\s*PC/i);
       if (pcMatch) {
         const amt = parseInt(pcMatch[1], 10);
-        return `<button onclick="spendPC(${amt}, '${ab.name}')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm shrink-0 no-print">Gastar ${amt} PC</button>`;
+        return `<button onclick="spendPC(${amt}, '${ab.name}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm shrink-0 no-print">Gastar ${amt} PC</button>`;
       }
       if (ab.cost.toLowerCase().includes('estresse')) {
-        return `<button onclick="addStress(1, '${ab.name}')" class="btn-tactical px-2 py-1 text-[10px] rounded-sm shrink-0 no-print">+1 Estresse</button>`;
+        return `<button onclick="addStress(1, '${ab.name}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm shrink-0 no-print">+1 Estresse</button>`;
       }
       return '';
     }
@@ -2043,7 +2725,7 @@
     function renderAttrBoostControls() {
       return `
         <div class="mt-2 pt-2 border-t border-dashed border-current flex flex-wrap items-center gap-2 no-print">
-          <span class="font-mono text-[10px] font-bold">Ajustar Atributos (+1 passo):</span>
+          <span class="font-mono text-[10px] font-bold">Aplicar aumento de passo (+1):</span>
           ${['corpo', 'intelecto', 'alma'].map(k => `
             <div class="flex items-center gap-1 font-mono text-[11px]">
               <span class="uppercase font-bold">${k}:</span>
@@ -2057,7 +2739,6 @@
     }
 
     function checkGenPrereq(gen, currentSlotKey) {
-      // Check max count or uniqueness
       const otherSelected = Object.entries(state.genAbilities)
         .filter(([k, v]) => k !== currentSlotKey && v === gen.id);
       if (!gen.repeatable && !gen.maxCount && otherSelected.length > 0) return false;
@@ -2083,6 +2764,14 @@
 
     function renderPermanentStress() {
       const container = document.getElementById('permanent-stress-list');
+      const warnEl = document.getElementById('unplayable-warning');
+      const count = state.permanentStress.filter(s => s && s.trim() !== '').length;
+      warnEl.classList.toggle('hidden', count < 5);
+
+      if (!Array.isArray(state.traumaTargets)) {
+        state.traumaTargets = ['', '', '', ''];
+      }
+
       const presets = [
         '1. Redução de PV Permanente (-2 PV Máx.)',
         '2. Redução de PC Permanente (-2 PC Máx.)',
@@ -2095,25 +2784,73 @@
         '9. Alma Cansada (-1 fixo em ALMA)'
       ];
 
+      const currentAttrs = getFinalAttributes();
+
       container.innerHTML = [0, 1, 2, 3].map(idx => {
         const val = state.permanentStress[idx] || '';
+        const tType = getTraumaType(val);
+        const targetId = state.traumaTargets[idx] || '';
+
+        let targetSelectorHTML = '';
+        if (tType === 'attr') {
+          targetSelectorHTML = `
+            <div class="mt-2 pt-2 border-t border-dashed border-current">
+              <label class="block font-mono text-[10px] font-bold uppercase text-red-700 dark:text-red-400 mb-1">
+                Selecione o Atributo reduzido (-1 passo):
+              </label>
+              <select onchange="setTraumaTarget(${idx}, this.value)" class="dossier-input w-full font-mono text-xs font-bold px-2 py-1 rounded-sm">
+                <option value="">-- Escolher Atributo --</option>
+                <option value="corpo" ${targetId === 'corpo' ? 'selected' : ''}>CORPO (Atual: ${currentAttrs.corpo})</option>
+                <option value="intelecto" ${targetId === 'intelecto' ? 'selected' : ''}>INTELECTO (Atual: ${currentAttrs.intelecto})</option>
+                <option value="alma" ${targetId === 'alma' ? 'selected' : ''}>ALMA (Atual: ${currentAttrs.alma})</option>
+              </select>
+            </div>
+          `;
+        } else if (tType === 'skill') {
+          // Filter trained skills (die > d4 before this trauma slot, or currently selected in this slot)
+          const trainedSkills = SKILLS_DATA.filter(sk => {
+            const dieBeforeThisTrauma = getSkillDie(sk.id, state, idx);
+            return dieBeforeThisTrauma !== 'd4' || targetId === sk.id;
+          });
+
+          targetSelectorHTML = `
+            <div class="mt-2 pt-2 border-t border-dashed border-current">
+              <label class="block font-mono text-[10px] font-bold uppercase text-red-700 dark:text-red-400 mb-1">
+                Selecione a Perícia Treinada reduzida (-1 passo):
+              </label>
+              ${trainedSkills.length > 0 ? `
+                <select onchange="setTraumaTarget(${idx}, this.value)" class="dossier-input w-full font-mono text-xs font-bold px-2 py-1 rounded-sm">
+                  <option value="">-- Escolher Perícia Treinada --</option>
+                  ${trainedSkills.map(sk => {
+                    const curDie = getSkillDie(sk.id);
+                    return `<option value="${sk.id}" ${targetId === sk.id ? 'selected' : ''}>${sk.name} (Atual: ${curDie})</option>`;
+                  }).join('')}
+                </select>
+              ` : `
+                <p class="font-mono text-[10px] opacity-75 italic">Nenhuma perícia treinada (acima de d4) disponível para reduzir.</p>
+              `}
+            </div>
+          `;
+        }
+
         return `
           <div class="dossier-card p-2 rounded-sm">
             <div class="flex items-center justify-between mb-1">
               <span class="font-mono text-[11px] font-black">SEQUELA 0${idx + 1}.</span>
               <select onchange="if(this.value) setPermanentStress(${idx}, this.value)" class="dossier-input font-mono text-[10px] px-1 py-0.5 rounded-sm max-w-[170px] no-print">
                 <option value="">-- Tabela 1d10 --</option>
-                ${presets.map(p => `<option value="${p}">${p}</option>`).join('')}
+                ${presets.map(p => `<option value="${p}" ${val === p ? 'selected' : ''}>${p}</option>`).join('')}
               </select>
             </div>
             <input type="text" value="${val.replace(/"/g, '&quot;')}" oninput="setPermanentStress(${idx}, this.value)" placeholder="Descreva a sequela permanente..." class="dossier-input w-full px-2 py-1 text-xs rounded-sm" />
+            ${targetSelectorHTML}
           </div>
         `;
       }).join('');
     }
 
     // =========================================================================
-    // 5. INVENTORY & FUNCTIONAL ITEM MECHANICS
+    // 7. INVENTORY & FUNCTIONAL ITEM MECHANICS
     // =========================================================================
     function renderInventory(slotsInfo) {
       const listEl = document.getElementById('inventory-list');
@@ -2144,12 +2881,10 @@
       const finalAttrs = getFinalAttributes();
       const hasHolster = state.inventory.some(i => i.catalogId === 'coldre_tatico');
       const hasSling = state.inventory.some(i => i.catalogId === 'bandoleira_tatica');
-      const hasToolbox = state.inventory.some(i => i.catalogId === 'caixa_ferramentas');
       const hasQuiver = state.inventory.some(i => i.catalogId === 'aljava');
       const hasStonePouch = state.inventory.some(i => i.catalogId === 'bolsa_pedras');
 
       listEl.innerHTML = state.inventory.map((item, idx) => {
-        // Calculate slot cost for display
         let slotCost = 0;
         if (item.inHolster) {
           slotCost = 0;
@@ -2163,7 +2898,6 @@
           if (item.inSling && slotCost > 0) slotCost = Math.max(0, slotCost - 1);
         }
 
-        // Warnings
         let warnings = [];
         if (item.reqCorpo && dieMax(finalAttrs.corpo) < dieMax(item.reqCorpo)) {
           warnings.push(`⚠ Exige CORPO ${item.reqCorpo}+ (Atual: ${finalAttrs.corpo})`);
@@ -2172,10 +2906,8 @@
           warnings.push(`⚠ CONDIÇÃO: QUEBRADO / TRAVADO`);
         }
 
-        // Interactive Controls based on item type
         let interactiveControls = '';
 
-        // A. Ranged Weapons (Ammo, Fire, Burst, Reload, Jam)
         if (item.cat === 'ranged' && item.cap) {
           const curAmmo = item.ammoCurrent ?? item.cap;
           const pct = Math.round((curAmmo / item.cap) * 100);
@@ -2210,7 +2942,6 @@
           `;
         }
 
-        // B. Chainsaw (Fuel & Jam)
         if (item.isChainsaw) {
           interactiveControls += `
             <div class="mt-2 pt-2 border-t border-dashed border-current flex flex-wrap gap-1.5 no-print">
@@ -2224,7 +2955,6 @@
           `;
         }
 
-        // C. Armor & Protection
         if (item.cat === 'armor') {
           interactiveControls += `
             <div class="mt-2 pt-2 border-t border-dashed border-current flex flex-wrap items-center justify-between gap-2 no-print">
@@ -2242,7 +2972,6 @@
           `;
         }
 
-        // D. Medkit (3/3 uses)
         if (item.isMedkit) {
           const uses = item.usesCurrent ?? item.maxUses;
           interactiveControls += `
@@ -2255,7 +2984,6 @@
           `;
         }
 
-        // E. Adrenaline Injection (+4 PV)
         if (item.isAdrenaline) {
           interactiveControls += `
             <div class="mt-2 pt-2 border-t border-dashed border-current flex justify-end no-print">
@@ -2266,7 +2994,6 @@
           `;
         }
 
-        // F. Food & Water & Consumables & Explosives
         if (item.isFood || item.isWater || item.isConsumable || item.isExplosive) {
           let btnLabel = 'Consumir (-1)';
           if (item.isFood) btnLabel = 'Comer Ração 1 dia (-1)';
@@ -2282,7 +3009,6 @@
           `;
         }
 
-        // G. Toggles (Flashlight, Radio)
         if (item.hasToggle) {
           const isOn = !!item.toggledOn;
           interactiveControls += `
@@ -2295,7 +3021,6 @@
           `;
         }
 
-        // H. Holster / Sling Attachments
         let attachmentControls = '';
         if (item.weightClass === 'light' && hasHolster) {
           attachmentControls += `
@@ -2325,7 +3050,6 @@
                   ${item.range ? `<span class="block font-mono text-[10px] opacity-75 mt-0.5">Alcance: ${item.range}</span>` : ''}
                 </div>
 
-                <!-- Quantity & Delete -->
                 <div class="flex items-center gap-1 shrink-0 no-print">
                   <button onclick="changeItemQty(${idx}, -1)" class="btn-tactical w-6 h-6 text-xs rounded-sm" title="Diminuir quantidade">-</button>
                   <span class="font-mono text-xs font-bold px-1.5">${item.qty}x</span>
@@ -2353,7 +3077,7 @@
     }
 
     // =========================================================================
-    // 6. INTERACTION HANDLERS
+    // 8. INTERACTION HANDLERS
     // =========================================================================
     function switchPage(pageNum) {
       state.activePage = pageNum;
@@ -2361,13 +3085,14 @@
     }
 
     function toggleTheme() {
-      state.darkMode = !state.darkMode;
-      saveAndRender();
+      darkMode = !darkMode;
+      saveLibrary();
+      renderView();
     }
 
     function updateField(field, value) {
       state[field] = value;
-      saveToStorage();
+      syncActiveCharacterToLibrary();
       if (field === 'name') {
         document.getElementById('p2-char-name').textContent = value || 'SEM NOME';
       }
@@ -2393,7 +3118,10 @@
       state.arquetipo = archId;
       state.archAbilities = { lv1: '', lv3: '', lv7: '', lv11: '' };
       saveAndRender();
-      if (archId) showToast(`Arquétipo ${ARQUETIPOS[archId].name} aplicado com suas 2 perícias treinadas.`);
+      if (archId) {
+        showToast(`Arquétipo ${ARQUETIPOS[archId].name} selecionado! Escolha sua habilidade inicial.`);
+        openAbilityModal('arch', 'lv1');
+      }
     }
 
     function changeLevel(delta) {
@@ -2403,7 +3131,6 @@
       state.level = newLv;
 
       const newStats = getDerivedStats();
-      // Adjust current PV/PC proportionally when max changes
       const pvDiff = newStats.pvMax - oldStats.pvMax;
       const pcDiff = newStats.pcMax - oldStats.pcMax;
       state.pvCurrent = Math.max(0, Math.min(newStats.pvMax, state.pvCurrent + pvDiff));
@@ -2411,6 +3138,17 @@
 
       saveAndRender();
       showToast(`Sobrevivente agora está no Nível ${newLv}.`);
+
+      if (delta > 0) {
+        const archMilestones = { 3: 'lv3', 7: 'lv7', 11: 'lv11' };
+        const genMilestones = { 2: 'lv2', 4: 'lv4', 5: 'lv5', 8: 'lv8', 9: 'lv9', 12: 'lv12' };
+
+        if (archMilestones[newLv] && state.arquetipo && !state.archAbilities[archMilestones[newLv]]) {
+          openAbilityModal('arch', archMilestones[newLv]);
+        } else if (genMilestones[newLv] && !state.genAbilities[genMilestones[newLv]]) {
+          openAbilityModal('gen', genMilestones[newLv]);
+        }
+      }
     }
 
     function toggleFreeMode() {
@@ -2500,7 +3238,6 @@
       if (emptyIdx !== -1) {
         state.permanentStress[emptyIdx] = '[COLAPSO MENTAL] Role 1d10 na tabela de Sequelas';
       } else {
-        // 5th trauma!
         state.permanentStress.push('[5ª SEQUELA] Personagem Injogável');
       }
       saveAndRender();
@@ -2548,7 +3285,6 @@
       if (!tipoObj) return;
       const maxAllowed = tipoObj.skillGrants[tier] || 0;
 
-      // Remove from other tiers first
       ['d6', 'd8', 'd10'].forEach(t => {
         if (t !== tier) {
           state.tipoSkillChoices[t] = state.tipoSkillChoices[t].filter(id => id !== skillId);
@@ -2574,25 +3310,44 @@
       saveAndRender();
     }
 
-    function selectArchAbility(milestoneKey, abId) {
-      state.archAbilities[milestoneKey] = abId;
-      const stats = getDerivedStats();
-      state.pvCurrent = Math.min(stats.pvMax, state.pvCurrent);
-      state.pcCurrent = Math.min(stats.pcMax, state.pcCurrent);
-      saveAndRender();
-    }
-
-    function selectGenAbility(milestoneKey, genId) {
-      state.genAbilities[milestoneKey] = genId;
-      saveAndRender();
-    }
-
     function setPermanentStress(idx, val) {
+      const oldType = getTraumaType(state.permanentStress[idx]);
+      const newType = getTraumaType(val);
       state.permanentStress[idx] = val;
+
+      if (!Array.isArray(state.traumaTargets)) {
+        state.traumaTargets = ['', '', '', ''];
+      }
+      // Clear target if trauma type changed or was cleared
+      if (oldType !== newType) {
+        state.traumaTargets[idx] = '';
+      }
+
+      const stats = getDerivedStats();
+      if (state.pvCurrent > stats.pvMax) state.pvCurrent = stats.pvMax;
+      if (state.pcCurrent > stats.pcMax) state.pcCurrent = stats.pcMax;
       saveAndRender();
     }
 
-    // Rests
+    function setTraumaTarget(idx, targetId) {
+      if (!Array.isArray(state.traumaTargets)) {
+        state.traumaTargets = ['', '', '', ''];
+      }
+      state.traumaTargets[idx] = targetId;
+
+      const stats = getDerivedStats();
+      if (state.pvCurrent > stats.pvMax) state.pvCurrent = stats.pvMax;
+      if (state.pcCurrent > stats.pcMax) state.pcCurrent = stats.pcMax;
+      saveAndRender();
+
+      if (targetId) {
+        const attrNames = { corpo: 'CORPO', intelecto: 'INTELECTO', alma: 'ALMA' };
+        const sk = SKILLS_DATA.find(s => s.id === targetId);
+        const label = attrNames[targetId] || (sk ? sk.name : targetId);
+        showToast(`Sequela aplicada: -1 passo em ${label}.`);
+      }
+    }
+
     function openAlertRestModal() {
       const bonus = hasGenAbility('recuperacao_rapida') ? 6 : 4;
       document.getElementById('alert-rest-vitals-desc').textContent = `Recupera +${bonus} PV e +${bonus} PC.`;
@@ -2631,7 +3386,7 @@
     }
 
     // =========================================================================
-    // 7. CATALOG & INVENTORY ACTIONS
+    // 9. CATALOG & INVENTORY ACTIONS
     // =========================================================================
     function openCatalogModal() {
       document.getElementById('catalog-modal').classList.remove('hidden');
@@ -2700,7 +3455,6 @@
       const template = CATALOG_ITEMS.find(i => i.id === catalogId);
       if (!template) return;
 
-      // If stackable, merge with existing stack
       if (template.stackable) {
         const existing = state.inventory.find(i => i.catalogId === catalogId);
         if (existing) {
@@ -2813,7 +3567,6 @@
       if (removed) showToast(`${removed.name} removido.`);
     }
 
-    // Weapon Fire & Reload Mechanics
     function fireWeapon(idx, shots) {
       const weapon = state.inventory[idx];
       if (!weapon || weapon.ammoCurrent < shots) return;
@@ -2951,7 +3704,6 @@
       const target = state.inventory[idx];
       if (!target) return;
       const next = !target.inHolster;
-      // Only 1 weapon per holster owned
       const holsterCount = state.inventory.filter(i => i.catalogId === 'coldre_tatico').reduce((s, i) => s + i.qty, 0);
       const currentlyHolstered = state.inventory.filter(i => i.inHolster).length;
       if (next && currentlyHolstered >= holsterCount) {
@@ -2976,120 +3728,9 @@
       saveAndRender();
     }
 
-    // =========================================================================
-    // 8. PERSISTENCE, EXAMPLE CHARACTER & MODALS
-    // =========================================================================
-    function saveToStorage() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        const ind = document.getElementById('save-indicator');
-        ind.textContent = '● Salvo localmente';
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
     function saveAndRender() {
-      saveToStorage();
-      renderAll();
-    }
-
-    function loadFromStorage() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          state = { ...getDefaultState(), ...parsed };
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function loadRicardoExample() {
-      state = getDefaultState();
-      state.name = 'Ricardo Gomes';
-      state.concept = 'Policial do interior de Minas Gerais, líder natural que sempre toma a dianteira e age rapidamente sob pressão.';
-      state.tipo = 'inspirador';
-      state.estilo = 'pratico';
-      state.arquetipo = 'policial';
-      state.level = 1;
-      state.baseAttributes = { corpo: 'd8', intelecto: 'd6', alma: 'd8' }; // Inspirador sobe ALMA para d10
-      state.tipoSkillChoices = {
-        d6: ['atletismo', 'investigacao'],
-        d8: ['persuasao', 'percepcao'],
-        d10: []
-      };
-      state.archAbilities.lv1 = 'voz_comando';
-      state.pvCurrent = 14;
-      state.pcCurrent = 15;
-
-      // Equipamento típico de policial para demonstração
-      addFromCatalog('revolver', 1);
-      addFromCatalog('municao_leve', 18);
-      addFromCatalog('coldre_tatico', 1);
-      addFromCatalog('colete_policial', 1);
-      addFromCatalog('lanterna_tatica', 1);
-      addFromCatalog('racao_comida', 3);
-      addFromCatalog('agua_potavel', 3);
-
-      // Put revolver in holster and equip vest
-      const rev = state.inventory.find(i => i.catalogId === 'revolver');
-      if (rev) rev.inHolster = true;
-      const vest = state.inventory.find(i => i.catalogId === 'colete_policial');
-      if (vest) vest.equipped = true;
-
-      saveAndRender();
-      showToast('Exemplo oficial carregado: Ricardo Gomes (Policial, Inspirador, Prático, Nv. 1)!');
-    }
-
-    function exportJSON() {
-      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(state, null, 2));
-      const dl = document.createElement('a');
-      const fileName = (state.name || 'sobrevivente_declinio').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json';
-      dl.setAttribute('href', dataStr);
-      dl.setAttribute('download', fileName);
-      document.body.appendChild(dl);
-      dl.click();
-      dl.remove();
-      showToast(`Ficha exportada como ${fileName}`);
-    }
-
-    function importJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          state = { ...getDefaultState(), ...imported };
-          saveAndRender();
-          showToast(`Ficha de "${state.name || 'Sobrevivente'}" importada com sucesso!`);
-        } catch (err) {
-          showToast('Erro ao importar JSON: arquivo inválido.');
-        }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    }
-
-    function openConfirmReset() {
-      document.getElementById('confirm-reset-modal').classList.remove('hidden');
-      document.getElementById('confirm-reset-modal').classList.add('flex');
-    }
-
-    function closeConfirmReset() {
-      document.getElementById('confirm-reset-modal').classList.add('hidden');
-      document.getElementById('confirm-reset-modal').classList.remove('flex');
-    }
-
-    function resetCharacter() {
-      const keepDark = state.darkMode;
-      state = getDefaultState();
-      state.darkMode = keepDark;
-      closeConfirmReset();
-      saveAndRender();
-      showToast('Nova ficha em branco criada.');
+      syncActiveCharacterToLibrary();
+      renderSheet();
     }
 
     function openRulesModal() {
@@ -3114,7 +3755,6 @@
       }, 3200);
     }
 
-    // Initialize on load
     window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>

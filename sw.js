@@ -1,4 +1,4 @@
-const CACHE_NAME = 'declinio-rpg-alfa-v2';
+const CACHE_NAME = 'declinio-rpg-alfa-v3';
 const ASSETS = [
   './',
   './index.html',

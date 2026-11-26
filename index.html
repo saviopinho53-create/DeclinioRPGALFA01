@@ -6,8 +6,9 @@
   <meta name="theme-color" content="#111111" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>DECLÍNIO: RPG // Sobreviventes (ALFA 0.1)</title>
-  <link rel="manifest" href="./manifest.json" />
+  <meta name="apple-mobile-web-app-title" content="Declínio RPG" />
+  <title>DECLÍNIO: RPG // Sobreviventes & Ficha (ALFA 0.1)</title>
+  <link rel="manifest" href="manifest.json" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +34,7 @@
       --text-muted: #525252;
       --border-main: #111111;
       --border-sub: #a3a3a3;
+      --accent-red: #991b1b;
     }
 
     body.dark-mode {
@@ -43,6 +45,7 @@
       --text-muted: #a3a3a3;
       --border-main: #e5e5e5;
       --border-sub: #404040;
+      --accent-red: #ef4444;
     }
 
     body {
@@ -117,6 +120,20 @@
       opacity: 0.85;
     }
 
+    .btn-danger {
+      border: 1.5px solid #991b1b;
+      background-color: #991b1b;
+      color: #ffffff;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      text-transform: uppercase;
+      transition: all 0.1s ease;
+    }
+
+    .btn-danger:hover {
+      background-color: #7f1d1d;
+    }
+
     .pip-box {
       width: 26px;
       height: 26px;
@@ -160,6 +177,12 @@
       .no-print {
         display: none !important;
       }
+      #library-view {
+        display: none !important;
+      }
+      #sheet-view {
+        display: block !important;
+      }
       .sheet-container {
         box-shadow: none !important;
         border: 2px solid #000000 !important;
@@ -185,7 +208,8 @@
   <!-- VIEW 1: BIBLIOTECA DE PERSONAGENS ("MEUS SOBREVIVENTES")               -->
   <!-- ===================================================================== -->
   <div id="library-view" class="max-w-5xl mx-auto">
-    <header class="sheet-container p-4 sm:p-5 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <!-- Main App Header -->
+    <header class="sheet-container p-4 sm:p-5 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <div class="flex items-center gap-2">
           <span class="px-2 py-0.5 text-[11px] font-mono font-extrabold tracking-widest uppercase border border-current">ALFA 0.1</span>
@@ -204,57 +228,95 @@
       </div>
     </header>
 
+    <!-- CLOUD ACCOUNT & SYNC BAR (FIREBASE AUTH + FIRESTORE) -->
+    <div id="cloud-auth-bar" class="sheet-container p-3.5 sm:p-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div id="cloud-logged-out" class="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
+        <div>
+          <span class="font-mono text-xs font-black uppercase block">☁ Sincronização na Nuvem (Opcional)</span>
+          <p class="text-[11px] opacity-75">Entre com sua conta Google para salvar e acessar seus sobreviventes no PC e no celular.</p>
+        </div>
+        <button onclick="loginWithGoogle()" class="btn-tactical-solid px-4 py-2 text-xs rounded-sm shrink-0">
+          Entrar com Google
+        </button>
+      </div>
+
+      <div id="cloud-logged-in" class="hidden flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-sm border-2 border-current object-cover shrink-0 hidden" onerror="this.classList.add('hidden')" />
+          <div id="user-avatar-fallback" class="w-10 h-10 rounded-sm border-2 border-current bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-mono text-base font-black shrink-0">U</div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span id="user-display-name" class="font-bold text-sm truncate">Sobrevivente</span>
+              <span id="cloud-sync-status" class="font-mono text-[10px] px-1.5 py-0.5 dossier-box rounded-sm">☁ Sincronizado com a nuvem</span>
+            </div>
+            <p id="user-email" class="font-mono text-[11px] opacity-75 truncate"></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="manualCloudRefresh()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm" title="Recarregar sobreviventes da nuvem">
+            ↻ Sincronizar
+          </button>
+          <button onclick="logoutGoogle()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">
+            Sair
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Library Toolbar -->
-    <div class="sheet-container p-4 sm:p-5">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b-2 border-current pb-4 mb-4">
+    <div class="sheet-container p-4 sm:p-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 mb-3 border-b-2 border-current">
         <div class="flex flex-wrap items-center gap-3">
-          <h2 class="text-xl sm:text-2xl font-black uppercase tracking-tight">Meus Sobreviventes</h2>
-          <span id="library-count-badge" class="font-mono text-xs font-bold px-2.5 py-1 dossier-box rounded-sm">0 fichas</span>
+          <h2 class="text-xl sm:text-2xl font-black uppercase tracking-tight">
+            Meus Sobreviventes (<span id="library-count">0</span>)
+          </h2>
           <button onclick="createNewCharacterInLibrary()" class="btn-tactical-solid px-3.5 py-2 text-xs rounded-sm">
             + Novo Sobrevivente
+          </button>
+          <button onclick="createRicardoInLibrary()" class="btn-tactical px-3 py-2 text-xs rounded-sm" title="Adicionar personagem exemplo oficial do manual">
+            + Exemplo: Ricardo
           </button>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <button onclick="createRicardoInLibrary()" class="btn-tactical px-3 py-2 text-xs rounded-sm" title="Adicionar o policial exemplo oficial do livro">
-            + Exemplo: Ricardo
-          </button>
-          <button onclick="exportAllJSON()" class="btn-tactical px-3 py-2 text-xs rounded-sm">
+          <button onclick="exportAllLibrary()" class="btn-tactical px-3 py-2 text-xs rounded-sm">
             Exportar Todos
           </button>
           <label class="btn-tactical px-3 py-2 text-xs rounded-sm cursor-pointer">
-            Importar JSON
-            <input type="file" accept=".json" class="hidden" onchange="importJSONToLibrary(event)" />
+            Importar
+            <input type="file" accept=".json" class="hidden" onchange="importToLibrary(event)" />
           </label>
         </div>
       </div>
 
-      <p class="text-xs opacity-75 mb-4">
-        "Exportar Todos" salva a biblioteca inteira num único arquivo de backup. Para exportar apenas um sobrevivente, use o botão <b>↓</b> no card dele. "Importar JSON" aceita arquivos com 1 ou vários personagens.
+      <p class="text-xs opacity-75 mb-4 leading-relaxed">
+        "Exportar Todos" salva a lista inteira num arquivo de backup. Para exportar um sobrevivente só, use o botão <b>↓</b> no card dele. "Importar" aceita arquivos com 1 ou vários personagens.
       </p>
 
-      <!-- Character Cards List -->
-      <div id="library-list" class="space-y-3">
-        <!-- Rendered by JS -->
+      <!-- Search Filter -->
+      <div class="mb-4">
+        <input type="text" id="library-search" oninput="renderLibrary()" placeholder="Filtrar sobreviventes por nome, tipo ou arquétipo..." class="dossier-input w-full px-3 py-2 text-xs font-mono rounded-sm" />
       </div>
 
-      <div id="library-empty" class="hidden text-center py-12 dossier-box rounded-sm p-6">
+      <!-- Character List -->
+      <div id="library-list" class="space-y-3">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="library-empty" class="hidden dossier-box p-8 text-center rounded-sm">
         <p class="font-mono text-sm font-bold uppercase mb-2">Nenhum sobrevivente registrado ainda</p>
-        <p class="text-xs opacity-75 mb-4">Crie uma ficha do zero ou carregue o exemplo oficial Ricardo Gomes para explorar o sistema.</p>
-        <div class="flex flex-wrap justify-center gap-2">
-          <button onclick="createNewCharacterInLibrary()" class="btn-tactical-solid px-4 py-2 text-xs rounded-sm">
-            + Criar Primeiro Sobrevivente
-          </button>
-          <button onclick="createRicardoInLibrary()" class="btn-tactical px-4 py-2 text-xs rounded-sm">
-            Carregar Exemplo: Ricardo Gomes
-          </button>
+        <p class="text-xs opacity-75 mb-4">Crie uma ficha nova do zero ou carregue o exemplo oficial de Ricardo Gomes para testar.</p>
+        <div class="flex justify-center gap-2">
+          <button onclick="createNewCharacterInLibrary()" class="btn-tactical-solid px-4 py-2 text-xs rounded-sm">+ Criar Primeiro Sobrevivente</button>
+          <button onclick="createRicardoInLibrary()" class="btn-tactical px-4 py-2 text-xs rounded-sm">+ Exemplo: Ricardo</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ===================================================================== -->
-  <!-- VIEW 2: EDITOR DA FICHA DE SOBREVIVENTE                               -->
+  <!-- VIEW 2: EDITOR DA FICHA DO SOBREVIVENTE                               -->
   <!-- ===================================================================== -->
   <div id="sheet-view" class="hidden">
     <!-- TOP ACTION BAR (NO PRINT) -->
@@ -266,7 +328,7 @@
           </button>
           <div>
             <div class="flex items-center gap-2">
-              <span class="px-1.5 py-0.5 text-[10px] font-mono font-extrabold uppercase border border-current">ALFA 0.1</span>
+              <span class="px-1.5 py-0.5 text-[10px] font-mono font-extrabold tracking-widest uppercase border border-current">ALFA 0.1</span>
               <h1 class="text-lg sm:text-xl font-black tracking-tight uppercase">DECLÍNIO: RPG</h1>
             </div>
             <p class="text-[11px] italic opacity-75 hidden sm:block">"Cada bala importa. Cada refeição conta. Cada ferimento pode ser o último."</p>
@@ -274,8 +336,8 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <button onclick="exportCurrentJSON()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
-            Exportar JSON
+          <button onclick="exportCurrentCharacter()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
+            ↓ Exportar Ficha
           </button>
           <button onclick="window.print()" class="btn-tactical px-2.5 py-1.5 text-xs rounded-sm">
             Imprimir
@@ -298,7 +360,7 @@
         </div>
 
         <div class="flex items-center gap-2 text-xs font-mono">
-          <span id="save-indicator" class="opacity-70">● Salvo na biblioteca</span>
+          <span id="save-indicator" class="opacity-70">● Salvo localmente</span>
           <button onclick="openRulesModal()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">
             📖 Consulta Rápida
           </button>
@@ -313,6 +375,7 @@
       <!-- PÁGINA 01 // REGISTRO                                               -->
       <!-- =================================================================== -->
       <section id="page-1" class="sheet-container p-4 sm:p-6 print-show-all">
+        <!-- Dossier Header -->
         <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-current pb-2 mb-4 gap-2">
           <div>
             <span class="font-mono text-xs font-bold tracking-widest uppercase opacity-75">DECLÍNIO: RPG // FICHA DE SOBREVIVENTE (PÁGINA 1 DE 2)</span>
@@ -360,12 +423,7 @@
             </div>
 
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="font-mono text-[11px] font-bold uppercase tracking-wider">ARQUÉTIPO (Ocupação)</label>
-                <button id="btn-open-arch-modal" onclick="openAbilityModal('arch', 'lv1')" class="hidden btn-tactical px-1.5 py-0.5 text-[9px] rounded-sm no-print">
-                  Escolher Hab.
-                </button>
-              </div>
+              <label class="block font-mono text-[11px] font-bold uppercase tracking-wider mb-1">ARQUÉTIPO (Ocupação Pré-Colapso)</label>
               <select id="char-arquetipo" onchange="changeArquetipo(this.value)" class="dossier-input w-full px-2.5 py-1.5 text-sm font-bold rounded-sm">
                 <option value="">-- Selecione um dos 20 Arquétipos --</option>
               </select>
@@ -385,15 +443,6 @@
               <p id="level-next-hint" class="text-[11px] opacity-75 mt-1 font-mono leading-tight">Nv 2: +1 Habilidade Geral</p>
             </div>
           </div>
-        </div>
-
-        <!-- PENDING ABILITY BANNER (IF ANY UNCHOSEN MILESTONE EXISTS) -->
-        <div id="pending-abilities-banner" class="hidden mb-4 p-3 dossier-card border-2 border-current rounded-sm flex flex-wrap items-center justify-between gap-2 no-print">
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 bg-red-800 text-white font-mono text-[10px] font-black uppercase">PENDENTE</span>
-            <span id="pending-abilities-text" class="font-mono text-xs font-bold">Você tem escolhas de habilidade disponíveis para o seu nível atual!</span>
-          </div>
-          <div id="pending-abilities-buttons" class="flex flex-wrap gap-1.5"></div>
         </div>
 
         <!-- ATTRIBUTES, VITALS & STRESS/WILLPOWER -->
@@ -586,6 +635,7 @@
       <!-- PÁGINA 02 // HABILIDADES, TRAUMAS & EQUIPAMENTO                     -->
       <!-- =================================================================== -->
       <section id="page-2" class="sheet-container p-4 sm:p-6 hidden print-show-all page-break">
+        <!-- Dossier Header -->
         <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-current pb-2 mb-4 gap-2">
           <div>
             <span class="font-mono text-xs font-bold tracking-widest uppercase opacity-75">DECLÍNIO: RPG // FICHA DE SOBREVIVENTE (PÁGINA 2 DE 2)</span>
@@ -604,12 +654,12 @@
             <div class="flex flex-wrap items-center justify-between border-b-2 border-current pb-1.5 mb-3 gap-2">
               <div>
                 <h3 class="font-mono text-sm font-black uppercase tracking-wider">HABILIDADES DE SOBREVIVENTE & PROGRESSÃO</h3>
-                <p class="font-mono text-[11px] opacity-75">Lista limpa das habilidades adquiridas por Tipo, Estilo, Arquétipo e Progressão</p>
+                <p class="font-mono text-[11px] opacity-75">Tipo, Estilo, Arquétipo e Habilidades Gerais desbloqueadas por nível</p>
               </div>
               <span class="font-mono text-[11px] font-bold px-2 py-0.5 border border-current">Nível Atual: <span id="p2-level-badge">1</span>/12</span>
             </div>
 
-            <!-- Progression Slots List -->
+            <!-- Clean List of Acquired Abilities -->
             <div id="abilities-list" class="space-y-3">
               <!-- Rendered dynamically -->
             </div>
@@ -627,7 +677,7 @@
               </p>
 
               <div class="space-y-2.5" id="permanent-stress-list">
-                <!-- 4 Trauma Slots with dynamic Attribute / Trained Skill reduction selectors -->
+                <!-- 4 Trauma Slots -->
               </div>
 
               <div id="unplayable-warning" class="hidden mt-3 p-2 bg-red-800 text-white font-mono text-xs font-black uppercase text-center rounded-sm">
@@ -715,29 +765,23 @@
           </div>
         </div>
       </section>
-
     </main>
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MODAL: POP-UP DE ESCOLHA DE HABILIDADE (ARQUÉTIPO OU GERAL)           -->
+  <!-- MODAL: POP-UP DE ESCOLHA DE HABILIDADES (ARQUÉTIPO OU GERAL)          -->
   <!-- ===================================================================== -->
-  <div id="ability-select-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-2 sm:p-4 no-print">
+  <div id="ability-picker-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-2 sm:p-4 no-print">
     <div class="sheet-container w-full max-w-3xl max-h-[90vh] flex flex-col rounded-sm overflow-hidden">
       <div class="p-3 sm:p-4 border-b-2 border-current flex items-center justify-between gap-2">
         <div>
-          <span id="ability-modal-kicker" class="font-mono text-[10px] font-bold uppercase tracking-widest opacity-75">PROGRESSÃO DE SOBREVIVENTE</span>
-          <h3 id="ability-modal-title" class="font-mono text-base sm:text-lg font-black uppercase">ESCOLHER HABILIDADE</h3>
+          <span id="picker-subtitle" class="font-mono text-[10px] font-bold uppercase tracking-widest opacity-75">PROGRESSÃO DE SOBREVIVENTE</span>
+          <h3 id="picker-title" class="font-mono text-base sm:text-lg font-black uppercase">ESCOLHA UMA HABILIDADE</h3>
         </div>
-        <button onclick="closeAbilityModal()" class="btn-tactical px-3 py-1 text-xs rounded-sm">✕ Fechar</button>
+        <button onclick="closeAbilityPickerModal()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm shrink-0">Decidir Depois</button>
       </div>
-
-      <div class="p-3 dossier-box border-b border-current text-xs font-mono">
-        <p id="ability-modal-subtitle">Selecione uma das opções abaixo para adicioná-la permanentemente à lista de habilidades da sua ficha.</p>
-      </div>
-
-      <div id="ability-modal-options" class="p-3 sm:p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
-        <!-- Populated dynamically with cards -->
+      <div id="picker-options-container" class="p-3 sm:p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
+        <!-- Populated dynamically -->
       </div>
     </div>
   </div>
@@ -745,7 +789,7 @@
   <!-- ===================================================================== -->
   <!-- MODAL: CATÁLOGO OFICIAL DE EQUIPAMENTOS                               -->
   <!-- ===================================================================== -->
-  <div id="catalog-modal" class="fixed inset-0 bg-black/75 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
+  <div id="catalog-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
     <div class="sheet-container w-full max-w-4xl max-h-[90vh] flex flex-col rounded-sm overflow-hidden">
       <div class="p-3 sm:p-4 border-b-2 border-current flex items-center justify-between">
         <div>
@@ -755,6 +799,7 @@
         <button onclick="closeCatalogModal()" class="btn-tactical px-3 py-1 text-xs rounded-sm">✕ Fechar</button>
       </div>
 
+      <!-- Category Filter & Search -->
       <div class="p-3 dossier-box border-b border-current flex flex-col sm:flex-row gap-2 justify-between">
         <div class="flex flex-wrap gap-1" id="catalog-tabs">
           <button onclick="setCatalogCategory('melee')" data-cat="melee" class="cat-tab btn-tactical-solid px-2.5 py-1 text-xs rounded-sm">Armas Brancas</button>
@@ -766,6 +811,7 @@
         <input type="text" id="catalog-search" oninput="renderCatalogItems()" placeholder="Buscar item..." class="dossier-input px-2.5 py-1 text-xs rounded-sm sm:w-52" />
       </div>
 
+      <!-- Catalog Items Grid -->
       <div id="catalog-items-container" class="p-3 sm:p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
         <!-- Populated by JS -->
       </div>
@@ -775,7 +821,7 @@
   <!-- ===================================================================== -->
   <!-- MODAL: ITEM CUSTOMIZADO                                               -->
   <!-- ===================================================================== -->
-  <div id="custom-item-modal" class="fixed inset-0 bg-black/75 z-40 hidden items-center justify-center p-4 no-print">
+  <div id="custom-item-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-4 no-print">
     <div class="sheet-container w-full max-w-md p-4 rounded-sm">
       <div class="flex items-center justify-between border-b-2 border-current pb-2 mb-3">
         <h3 class="font-mono text-base font-black uppercase">ADICIONAR ITEM CUSTOMIZADO</h3>
@@ -815,7 +861,7 @@
   <!-- ===================================================================== -->
   <!-- MODAL: DESCANSO ALERTA                                                -->
   <!-- ===================================================================== -->
-  <div id="alert-rest-modal" class="fixed inset-0 bg-black/75 z-40 hidden items-center justify-center p-4 no-print">
+  <div id="alert-rest-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-4 no-print">
     <div class="sheet-container w-full max-w-md p-4 rounded-sm">
       <div class="flex items-center justify-between border-b-2 border-current pb-2 mb-3">
         <h3 class="font-mono text-base font-black uppercase">⛺ DESCANSO ALERTA (1h a 3h)</h3>
@@ -840,7 +886,7 @@
   <!-- ===================================================================== -->
   <!-- MODAL: CONSULTA RÁPIDA DE REGRAS                                      -->
   <!-- ===================================================================== -->
-  <div id="rules-modal" class="fixed inset-0 bg-black/75 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
+  <div id="rules-modal" class="fixed inset-0 bg-black/70 z-40 hidden items-center justify-center p-2 sm:p-4 no-print">
     <div class="sheet-container w-full max-w-3xl max-h-[88vh] flex flex-col rounded-sm overflow-hidden">
       <div class="p-3 sm:p-4 border-b-2 border-current flex items-center justify-between">
         <h3 class="font-mono text-base sm:text-lg font-black uppercase">📖 GUIA RÁPIDO DE REGRAS — DECLÍNIO ALFA 0.1</h3>
@@ -894,13 +940,13 @@
   <!-- ===================================================================== -->
   <!-- MODAL: CONFIRMAR EXCLUSÃO DA BIBLIOTECA                               -->
   <!-- ===================================================================== -->
-  <div id="confirm-delete-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4 no-print">
+  <div id="confirm-delete-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4 no-print">
     <div class="sheet-container w-full max-w-sm p-4 rounded-sm">
       <h3 class="font-mono text-base font-black uppercase mb-2">EXCLUIR SOBREVIVENTE?</h3>
-      <p id="confirm-delete-text" class="text-xs mb-4">Tem certeza que deseja remover esta ficha permanentemente da biblioteca?</p>
+      <p class="text-xs mb-4">Tem certeza que deseja remover <b id="delete-target-name">este personagem</b> da sua biblioteca? Esta ação não pode ser desfeita.</p>
       <div class="flex justify-end gap-2">
         <button onclick="closeConfirmDelete()" class="btn-tactical px-3 py-1.5 text-xs rounded-sm">Cancelar</button>
-        <button onclick="confirmDeleteCharacter()" class="btn-tactical-solid px-3 py-1.5 text-xs rounded-sm">Excluir Ficha</button>
+        <button onclick="confirmDeleteCharacter()" class="btn-danger px-3 py-1.5 text-xs rounded-sm">Excluir</button>
       </div>
     </div>
   </div>
@@ -1137,7 +1183,7 @@
           { id: 'duro_de_matar', name: 'Duro de Matar', cost: '5 PC + 2 Estresse', desc: 'Quando algo reduzir seus PV a 0, gaste 5 PC e receba 2 Marcadores de Estresse para permanecer com 1 PV (cai inconsciente).' },
           { id: 'segurar_pontas', name: 'Segurar as Pontas', cost: '2 PC', desc: 'Gaste 2 PC para absorver 1 Marcador de Estresse que um aliado adjacente receberia, transferindo-o para si mesmo.' },
           { id: 'folego_extra', name: 'Fôlego Extra', cost: '1 Vontade', desc: 'Gaste 1 Marcador de Vontade para ignorar as penalidades de Exaustão durante uma cena.' },
-          { id: 'forca_vontade', name: 'Força de Vontade', cost: 'Passiva / 3 PC', desc: 'Seus PV e PC máximos aumentam em +2 nesse nível e +2 no nível seguinte. Além disso, pode gastar 3 PC para ganhar 4 PP contra dano físico até o fim da cena.' }
+          { id: 'forca_vontade', name: 'Força de Vontade', cost: 'Passiva / 3 PC', desc: 'Seus PV e PC máximos aumentam em +2 nesse nível e +2 no nível seguinte. Também pode gastar 3 PC para ganhar 4 PP contra dano físico até o fim da cena.' }
         ]
       },
       piloto: {
@@ -1289,7 +1335,7 @@
     ];
 
     const CATALOG_ITEMS = [
-      // ARMAS BRANCAS (13)
+      // ARMAS BRANCAS
       { id: 'soco_ingles', cat: 'melee', name: 'Soco Inglês', damage: 'RB + 1', slots: 1, range: 'Corpo a Corpo', weightClass: 'light', props: ['Leve', 'Contundente', 'Usa Briga'], desc: 'Utiliza a perícia Briga ao invés de Armas Brancas. Pode ser empunhado com outra arma leve.' },
       { id: 'faca', cat: 'melee', name: 'Faca', damage: 'RB + 2', slots: 1, range: 'Corpo a Corpo', weightClass: 'light', props: ['Leve', 'Cortante/Perfurante', 'Arremesso (Curto)'], desc: 'Lâmina tática ou de caça. Fácil de ocultar e arremessável a alcance curto.' },
       { id: 'martelo', cat: 'melee', name: 'Martelo', damage: 'RB + 2', slots: 1, range: 'Corpo a Corpo', weightClass: 'light', props: ['Leve', 'Contundente', 'Ferramenta'], desc: 'Útil para reparos e barricadas; impacto concentrado quebra ossos e fechaduras frágeis.' },
@@ -1304,7 +1350,7 @@
       { id: 'machado', cat: 'melee', name: 'Machado', damage: 'RB + 4', slots: 2, range: 'Corpo a Corpo', weightClass: 'heavy', props: ['Pesada', 'Cortante', 'Ferramenta'], desc: 'Exige duas mãos. Concede +1 em testes de Atletismo para arrombar portas e barricadas.' },
       { id: 'serra_eletrica', cat: 'melee', name: 'Serra Elétrica', damage: 'RB + 6', slots: 3, range: 'Corpo a Corpo', weightClass: 'heavy', isChainsaw: true, props: ['Pesada', 'Cortante', 'Barulhenta', 'Combustível', 'Defeito'], desc: 'Consome 1 unidade de combustível por cena de combate. Rugido atrai ameaças num raio de centenas de metros.' },
 
-      // ARMAS À DISTÂNCIA (11)
+      // ARMAS À DISTÂNCIA
       { id: 'estilingue', cat: 'ranged', name: 'Estilingue', damage: 'RB + 1', slots: 1, range: 'Curto (9m)', cap: 1, ammoType: 'pedras', weightClass: 'light', reliable: true, props: ['Leve', 'Silenciosa'], desc: 'Dispara pedras ou esferas metálicas sem fazer barulho.' },
       { id: 'besta_leve', cat: 'ranged', name: 'Besta Leve', damage: 'RB + 2', slots: 1, range: 'Curto (9m)', cap: 1, ammoType: 'flechas', weightClass: 'light', props: ['Leve', 'Silenciosa', 'Recarga (Ação Pequena)', 'Defeito'], desc: 'Operada com uma mão; recarregada na Fase de Preparação com Ação Pequena.' },
       { id: 'arco', cat: 'ranged', name: 'Arco', damage: 'RB + 3', slots: 2, range: 'Médio (24m)', cap: 1, ammoType: 'flechas', weightClass: 'heavy', props: ['Pesada', 'Silenciosa', 'Recupera Flechas'], desc: 'Exige duas mãos. Permite recuperar metade das flechas disparadas após o combate.' },
@@ -1317,13 +1363,13 @@
       { id: 'fuzil', cat: 'ranged', name: 'Fuzil', damage: 'RB + 5', slots: 3, range: 'Médio (24m)', cap: 20, ammoType: 'municao_pesada', weightClass: 'heavy', props: ['Pesada', 'Munição Pesada', 'Defeito'], desc: 'Rifle militar de assalto de alto calibre.' },
       { id: 'rifle_precisao', cat: 'ranged', name: 'Rifle de Precisão', damage: 'RB + 6', slots: 3, range: 'Longo (60m)', cap: 5, ammoType: 'municao_pesada', weightClass: 'heavy', props: ['Pesada', 'Munição Pesada', 'Mira Telescópica', 'Defeito'], desc: 'Armado com luneta óptica para abates a longa distância.' },
 
-      // EXPLOSIVOS (4)
+      // EXPLOSIVOS
       { id: 'molotov', cat: 'explosives', name: 'Coquetel Molotov', damage: '1d6 fogo/rodada', slots: 1, range: 'Curto (9m)', stackable: false, isExplosive: true, props: ['Arremesso', 'Área (3m / 2 quad.)'], desc: 'Queima uma área de 3m por 3 rodadas, causando 1d6 de dano de fogo/rodada.' },
       { id: 'granada', cat: 'explosives', name: 'Granada de Fragmentação', damage: '2d6 + 4', slots: 1, range: 'Curto (9m)', stackable: false, isExplosive: true, props: ['Arremesso', 'Área (4,5m / 3 quad.)'], desc: 'Estilhaços em raio de 4,5m (CORPO + Reflexos DT 12 reduz dano pela metade).' },
       { id: 'mina_proximidade', cat: 'explosives', name: 'Mina de Proximidade', damage: '2d6 + 4', slots: 1, range: 'Instalação', stackable: false, isExplosive: true, props: ['Armadilha', 'Área (3m / 2 quad.)'], desc: 'Exige armar com Explosivos. Detona automaticamente quando alguém entra no espaço.' },
       { id: 'explosivo_remoto', cat: 'explosives', name: 'Explosivo Remoto', damage: '3d6 + 6', slots: 2, range: 'Instalação', stackable: false, isExplosive: true, props: ['Detonação Remota', 'Área (6m / 4 quad.)', 'Demolição'], desc: 'Carga plástica/dinamite com detonador. Derruba paredes, portões reforçados e veículos.' },
 
-      // PROTEÇÕES (6)
+      // PROTEÇÕES
       { id: 'protecao_leve', cat: 'armor', name: 'Proteção Leve', slots: 1, guardaBonus: 2, ppPerm: 0, props: ['+2 Guarda', 'Leve', 'Flexível'], desc: 'Jaquetas de couro grosso ou roupas de motociclista. Não atrapalha movimentos.' },
       { id: 'protecao_pesada', cat: 'armor', name: 'Proteção Pesada', slots: 4, guardaBonus: 0, ppPerm: 2, armorPenalty: true, props: ['2 PP Permanentes', 'Pesada (-1 passo Furtividade/Atletismo)'], desc: 'Placas metálicas ou traje tático pesado. Reduz em 2 pontos cada golpe recebido continuamente.' },
       { id: 'colete_policial', cat: 'armor', name: 'Colete Policial', slots: 2, guardaBonus: 0, ppTempMax: 4, props: ['4 PP Temporários', 'Blindagem Absorvente'], desc: 'Absorve até 4 pontos de dano sofridos; após zerar, precisa ser reparado com Mecânica ou Engenharia.' },
@@ -1331,7 +1377,7 @@
       { id: 'escudo', cat: 'armor', name: 'Escudo', slots: 2, guardaBonus: 1, ppPerm: 0, props: ['+1 Guarda', 'Ocupa 1 Mão', 'Cobertura Móvel'], desc: 'Permite usar Reação para dar cobertura parcial (+2 Guarda à distância) a um aliado adjacente.' },
       { id: 'roupa_frio', cat: 'armor', name: 'Roupa de Frio', slots: 2, guardaBonus: 0, ppPerm: 0, props: ['Isolamento Térmico'], desc: 'Impede completamente penalidades por Frio Extremo e Hipotermia. Pode ser usado com Proteções Leves.' },
 
-      // SUPRIMENTOS, FERRAMENTAS E ACESSÓRIOS (19)
+      // SUPRIMENTOS & ACESSÓRIOS
       { id: 'kit_primeiros_socorros', cat: 'supplies', name: 'Kit de Primeiros Socorros', slots: 2, maxUses: 3, isMedkit: true, props: ['3 Usos', 'Medicina DT 7 -> 1d4 PV'], desc: 'Gastando Ação Principal (Preparação) e Medicina DT 7, restaura 1d4 PV de um alvo.' },
       { id: 'injecao_adrenalina', cat: 'supplies', name: 'Injeção de Adrenalina', slots: 1, isAdrenaline: true, props: ['Uso Único', '+4 PV', 'Remove Condições'], desc: 'Restaura 4 PV imediatamente e remove Exausto, Inconsciente ou Paralisado (não funciona em 0 PV).' },
       { id: 'antidoto', cat: 'supplies', name: 'Antídoto / Antibiótico Básico', slots: 1, isConsumable: true, props: ['Uso Único', '+1 passo vs. Doenças/Toxinas'], desc: 'Concede +1 passo em testes de CORPO ou Resiliência para resistir a infecções, febres ou venenos.' },
@@ -1369,6 +1415,10 @@
     let deferredInstallPrompt = null;
     let modalContext = { kind: null, milestoneKey: null };
 
+    // Cloud state populated by Firebase module script
+    let currentUser = null;
+    window.cloudAPI = null;
+
     function createBlankSurvivor(customName = '') {
       const now = new Date();
       const dateStr = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -1376,6 +1426,7 @@
         id: 'surv_' + Date.now() + '_' + Math.random().toString(16).slice(2, 6),
         createdAt: dateStr,
         updatedAt: dateStr,
+        updatedTimestamp: Date.now(),
         name: customName,
         concept: '',
         tipo: '',
@@ -1394,8 +1445,7 @@
         stress: 0,
         willpower: 0,
         permanentStress: ['', '', '', ''],
-        // Stores target attribute/skill ID for trauma #4 (attribute) or #5 (skill) per slot
-        traumaTargets: ['', '', '', ''],
+        permanentStressTargets: ['', '', '', ''],
         conditions: [],
         inventory: [],
         activePage: 1
@@ -1419,7 +1469,7 @@
       ric.pvCurrent = 14;
       ric.pcCurrent = 15;
 
-      const addInitItem = (catId, qty, extra = {}) => {
+      const addInit = (catId, qty) => {
         const t = CATALOG_ITEMS.find(i => i.id === catId);
         if (!t) return;
         ric.inventory.push({
@@ -1444,7 +1494,7 @@
           ppPerm: t.ppPerm || 0,
           ppTempMax: t.ppTempMax || 0,
           ppTempCurrent: t.ppTempMax || 0,
-          equipped: false,
+          equipped: t.id === 'colete_policial',
           maxUses: t.maxUses || null,
           usesCurrent: t.maxUses || null,
           isMedkit: !!t.isMedkit,
@@ -1461,21 +1511,71 @@
           desc: t.desc || '',
           qty,
           broken: false,
-          inHolster: false,
-          inSling: false,
-          ...extra
+          inHolster: t.id === 'revolver',
+          inSling: false
         });
       };
 
-      addInitItem('revolver', 1, { inHolster: true });
-      addInitItem('municao_leve', 18);
-      addInitItem('coldre_tatico', 1);
-      addInitItem('colete_policial', 1, { equipped: true });
-      addInitItem('lanterna_tatica', 1);
-      addInitItem('racao_comida', 3);
-      addInitItem('agua_potavel', 3);
+      addInit('revolver', 1);
+      addInit('municao_leve', 18);
+      addInit('coldre_tatico', 1);
+      addInit('colete_policial', 1);
+      addInit('lanterna_tatica', 1);
+      addInit('racao_comida', 3);
+      addInit('agua_potavel', 3);
 
       return ric;
+    }
+
+    function loadLibrary() {
+      try {
+        const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+        darkMode = !!prefs.darkMode;
+
+        const rawLib = localStorage.getItem(LIBRARY_KEY);
+        if (rawLib) {
+          library = JSON.parse(rawLib);
+        } else {
+          const legacyRaw = localStorage.getItem('declinio_rpg_sheet_v1');
+          if (legacyRaw) {
+            const legacy = JSON.parse(legacyRaw);
+            const migrated = { ...createBlankSurvivor(), ...legacy };
+            library = [migrated];
+            saveLibrary();
+          } else {
+            library = [];
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        library = [];
+      }
+    }
+
+    function saveLibrary() {
+      try {
+        localStorage.setItem(LIBRARY_KEY, JSON.stringify(library));
+        localStorage.setItem(PREFS_KEY, JSON.stringify({ darkMode }));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function syncActiveCharacterToLibrary() {
+      if (!state || !activeCharId) return;
+      state.updatedAt = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+      state.updatedTimestamp = Date.now();
+      const idx = library.findIndex(c => c.id === activeCharId);
+      if (idx !== -1) {
+        library[idx] = state;
+      } else {
+        library.unshift(state);
+      }
+      saveLibrary();
+
+      if (currentUser && window.cloudAPI) {
+        window.cloudAPI.saveSurvivor(currentUser.uid, state);
+      }
     }
 
     // =========================================================================
@@ -1492,14 +1592,6 @@
       return parseInt(die.replace('d', ''), 10) || 4;
     }
 
-    function getTraumaType(text) {
-      if (!text) return null;
-      const lower = text.toLowerCase();
-      if (lower.startsWith('4.') || lower.includes('redução de passo em atributo')) return 'attr';
-      if (lower.startsWith('5.') || lower.includes('redução de passo em perícia')) return 'skill';
-      return null;
-    }
-
     function getFinalAttributes(charObj = state) {
       const attrs = { ...charObj.baseAttributes };
       const tipoObj = TIPOS[charObj.tipo];
@@ -1507,15 +1599,16 @@
         attrs[tipoObj.attrBonus] = stepUp(attrs[tipoObj.attrBonus], 1);
       }
       ['corpo', 'intelecto', 'alma'].forEach(k => {
-        if (charObj.attrDeltas[k]) {
+        if (charObj.attrDeltas && charObj.attrDeltas[k]) {
           attrs[k] = stepUp(attrs[k], charObj.attrDeltas[k]);
         }
       });
 
-      // Apply Permanent Stress #4 (Attribute -1 step)
-      const targets = charObj.traumaTargets || ['', '', '', ''];
-      (charObj.permanentStress || []).forEach((txt, idx) => {
-        if (getTraumaType(txt) === 'attr' && targets[idx] && attrs[targets[idx]]) {
+      // Permanent Trauma #4 (-1 step in chosen Attribute)
+      const perms = charObj.permanentStress || [];
+      const targets = charObj.permanentStressTargets || [];
+      perms.forEach((pText, idx) => {
+        if (pText && pText.startsWith('4.') && targets[idx] && attrs[targets[idx]]) {
           attrs[targets[idx]] = stepUp(attrs[targets[idx]], -1);
         }
       });
@@ -1526,7 +1619,7 @@
     function getArchAbilityAcquisitionLevel(abilityId, charObj = state) {
       const milestoneLevels = { lv1: 1, lv3: 3, lv7: 7, lv11: 11 };
       for (const [key, reqLv] of Object.entries(milestoneLevels)) {
-        if (charObj.level >= reqLv && charObj.archAbilities[key] === abilityId) {
+        if (charObj.level >= reqLv && charObj.archAbilities && charObj.archAbilities[key] === abilityId) {
           return reqLv;
         }
       }
@@ -1566,11 +1659,11 @@
     }
 
     function hasTraumaType(keyword, charObj = state) {
-      return charObj.permanentStress.some(s => s && s.toLowerCase().includes(keyword.toLowerCase()));
+      return (charObj.permanentStress || []).some(s => s && s.toLowerCase().includes(keyword.toLowerCase()));
     }
 
-    function getSkillDie(skillId, charObj = state, ignoreSkillTraumaSlotIdx = -1) {
-      let baseStep = 0;
+    function getSkillDie(skillId, charObj = state) {
+      let baseStep = 0; // d4
       const arch = ARQUETIPOS[charObj.arquetipo];
       if (arch && arch.skills[skillId]) {
         baseStep = DICE_STEPS.indexOf(arch.skills[skillId]);
@@ -1583,15 +1676,16 @@
       const delta = charObj.skillDeltas[skillId] || 0;
       let finalIdx = Math.max(0, Math.min(DICE_STEPS.length - 1, baseStep + delta));
 
-      // Apply Permanent Stress #5 (Trained Skill -1 step)
-      const targets = charObj.traumaTargets || ['', '', '', ''];
-      (charObj.permanentStress || []).forEach((txt, idx) => {
-        if (idx !== ignoreSkillTraumaSlotIdx && getTraumaType(txt) === 'skill' && targets[idx] === skillId) {
+      // Permanent Trauma #5 (-1 step in chosen trained Skill)
+      const perms = charObj.permanentStress || [];
+      const targets = charObj.permanentStressTargets || [];
+      perms.forEach((pText, idx) => {
+        if (pText && pText.startsWith('5.') && targets[idx] === skillId) {
           finalIdx = Math.max(0, finalIdx - 1);
         }
       });
 
-      const heavyArmorEquipped = charObj.inventory.some(i => i.catalogId === 'protecao_pesada' && i.equipped);
+      const heavyArmorEquipped = (charObj.inventory || []).some(i => i.catalogId === 'protecao_pesada' && i.equipped);
       if (heavyArmorEquipped && (skillId === 'furtividade' || skillId === 'atletismo')) {
         finalIdx = Math.max(0, finalIdx - 1);
       }
@@ -1614,19 +1708,15 @@
         if (charObj.level >= 10 && tipoObj.id === 'robusto') pvMax += 1;
       }
 
-      // Força de Vontade (Perseverante): +2 no nível em que é pega e +2 no nível seguinte
-      const fwAcqLv = getArchAbilityAcquisitionLevel('forca_vontade', charObj);
-      if (fwAcqLv !== null) {
-        const fwBonus = charObj.level >= fwAcqLv + 1 ? 4 : 2;
+      // Força de Vontade: +2 no nível em que é pega e +2 no nível seguinte
+      const fwMilestoneLevel = getArchAbilityAcquisitionLevel('forca_vontade', charObj);
+      if (fwMilestoneLevel !== null) {
+        const fwBonus = charObj.level >= fwMilestoneLevel + 1 ? 4 : 2;
         pvMax += fwBonus;
       }
 
-      if (hasGenAbility('casca_grossa', charObj)) {
-        pvMax += 3;
-      }
-      if (hasTraumaType('pv', charObj)) {
-        pvMax -= 2;
-      }
+      if (hasGenAbility('casca_grossa', charObj)) pvMax += 3;
+      if (hasTraumaType('pv', charObj)) pvMax -= 2;
       pvMax = Math.max(1, pvMax);
 
       // PC Max
@@ -1636,13 +1726,13 @@
         if (charObj.level >= 8) pcMax += tipoObj.pcStep;
         if (charObj.level >= 12) pcMax += tipoObj.pcStep;
       }
-      if (fwAcqLv !== null) {
-        const fwBonus = charObj.level >= fwAcqLv + 1 ? 4 : 2;
+
+      if (fwMilestoneLevel !== null) {
+        const fwBonus = charObj.level >= fwMilestoneLevel + 1 ? 4 : 2;
         pcMax += fwBonus;
       }
-      if (hasTraumaType('pc', charObj)) {
-        pcMax -= 2;
-      }
+
+      if (hasTraumaType('pc', charObj)) pcMax -= 2;
       pcMax = Math.max(1, pcMax);
 
       // Guarda & PP
@@ -1651,7 +1741,7 @@
       let ppPerm = 0;
       let ppTemp = 0;
 
-      charObj.inventory.forEach(item => {
+      (charObj.inventory || []).forEach(item => {
         if (item.equipped) {
           if (item.guardaBonus) {
             guarda += item.guardaBonus;
@@ -1662,7 +1752,7 @@
         }
       });
 
-      charObj.conditions.forEach(cId => {
+      (charObj.conditions || []).forEach(cId => {
         const cObj = CONDITIONS_DATA.find(c => c.id === cId);
         if (cObj && cObj.guardaMod) {
           guarda += cObj.guardaMod;
@@ -1674,11 +1764,11 @@
 
       let speed = hasArchAbility('passos_largos', charObj) ? 12 : 9;
       const isOverloaded = slotsInfo.used > slotsInfo.max;
-      const hasZeroSpeedCond = charObj.conditions.some(cId => {
+      const hasZeroSpeedCond = (charObj.conditions || []).some(cId => {
         const cObj = CONDITIONS_DATA.find(c => c.id === cId);
         return cObj && cObj.speedZero;
       });
-      const hasHalfSpeedCond = charObj.conditions.some(cId => {
+      const hasHalfSpeedCond = (charObj.conditions || []).some(cId => {
         const cObj = CONDITIONS_DATA.find(c => c.id === cId);
         return cObj && cObj.halfSpeed;
       });
@@ -1708,18 +1798,15 @@
     function calculateSlots(charObj = state) {
       let max = 20;
       if (hasGenAbility('mochileiro', charObj)) max += 4;
-      const hasTacBackpack = charObj.inventory.some(i => i.catalogId === 'mochila_tatica');
-      if (hasTacBackpack) max += 2;
+      const inv = charObj.inventory || [];
+      if (inv.some(i => i.catalogId === 'mochila_tatica')) max += 2;
 
-      const hasQuiver = charObj.inventory.some(i => i.catalogId === 'aljava');
-      const hasStonePouch = charObj.inventory.some(i => i.catalogId === 'bolsa_pedras');
+      const hasQuiver = inv.some(i => i.catalogId === 'aljava');
+      const hasStonePouch = inv.some(i => i.catalogId === 'bolsa_pedras');
 
       let used = 0;
-      charObj.inventory.forEach(item => {
-        if (item.inHolster) {
-          used += 0;
-          return;
-        }
+      inv.forEach(item => {
+        if (item.inHolster) return;
         if (item.stackable) {
           let stackSize = item.stackSize || 10;
           if (item.ammoKey === 'flechas' && hasQuiver) stackSize = 50;
@@ -1727,9 +1814,7 @@
           used += Math.ceil((item.qty || 1) / stackSize);
         } else {
           let itemSlots = (item.slots || 0) * (item.qty || 1);
-          if (item.inSling && itemSlots > 0) {
-            itemSlots = Math.max(0, itemSlots - 1);
-          }
+          if (item.inSling && itemSlots > 0) itemSlots = Math.max(0, itemSlots - 1);
           used += itemSlots;
         }
       });
@@ -1738,29 +1823,33 @@
     }
 
     // =========================================================================
-    // 4. INITIALIZATION & PWA REGISTRATION
+    // 4. VIEW & LIBRARY RENDERING
     // =========================================================================
     function init() {
       populateArquetiposSelect();
-      loadLibraryAndPrefs();
+      loadLibrary();
       registerPWA();
       renderView();
     }
 
     function registerPWA() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      }
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredInstallPrompt = e;
         const btn = document.getElementById('pwa-install-btn');
         if (btn) btn.classList.remove('hidden');
       });
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
     }
 
     async function triggerPWAInstall() {
-      if (!deferredInstallPrompt) return;
+      if (!deferredInstallPrompt) {
+        showToast('Para instalar: abra o menu do navegador (⋮) e toque em "Adicionar à tela inicial".');
+        return;
+      }
       deferredInstallPrompt.prompt();
       const { outcome } = await deferredInstallPrompt.userChoice;
       if (outcome === 'accepted') {
@@ -1783,65 +1872,19 @@
       });
     }
 
-    function loadLibraryAndPrefs() {
-      try {
-        const prefsRaw = localStorage.getItem(PREFS_KEY);
-        if (prefsRaw) {
-          const prefs = JSON.parse(prefsRaw);
-          darkMode = !!prefs.darkMode;
-        }
-
-        const libRaw = localStorage.getItem(LIBRARY_KEY);
-        if (libRaw) {
-          library = JSON.parse(libRaw);
-        } else {
-          const legacyRaw = localStorage.getItem('declinio_rpg_sheet_v1');
-          if (legacyRaw) {
-            const oldChar = JSON.parse(legacyRaw);
-            const migrated = { ...createBlankSurvivor(), ...oldChar };
-            library = [migrated];
-            saveLibrary();
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function saveLibrary() {
-      try {
-        localStorage.setItem(LIBRARY_KEY, JSON.stringify(library));
-        localStorage.setItem(PREFS_KEY, JSON.stringify({ darkMode }));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function syncActiveCharacterToLibrary() {
-      if (!state || !activeCharId) return;
-      state.updatedAt = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-      const idx = library.findIndex(c => c.id === activeCharId);
-      if (idx !== -1) {
-        library[idx] = state;
-      } else {
-        library.unshift(state);
-      }
-      saveLibrary();
-    }
-
-    // =========================================================================
-    // 5. LIBRARY ACTIONS & RENDERING
-    // =========================================================================
     function renderView() {
       document.body.classList.toggle('dark-mode', darkMode);
 
+      const libView = document.getElementById('library-view');
+      const sheetView = document.getElementById('sheet-view');
+
       if (currentView === 'library') {
-        document.getElementById('library-view').classList.remove('hidden');
-        document.getElementById('sheet-view').classList.add('hidden');
+        libView.classList.remove('hidden');
+        sheetView.classList.add('hidden');
         renderLibrary();
       } else {
-        document.getElementById('library-view').classList.add('hidden');
-        document.getElementById('sheet-view').classList.remove('hidden');
+        libView.classList.add('hidden');
+        sheetView.classList.remove('hidden');
         renderSheet();
       }
     }
@@ -1849,9 +1892,19 @@
     function renderLibrary() {
       const listEl = document.getElementById('library-list');
       const emptyEl = document.getElementById('library-empty');
-      const badgeEl = document.getElementById('library-count-badge');
+      const countEl = document.getElementById('library-count');
+      const query = (document.getElementById('library-search').value || '').toLowerCase();
 
-      badgeEl.textContent = `${library.length} ${library.length === 1 ? 'ficha' : 'fichas'}`;
+      countEl.textContent = library.length;
+
+      const filtered = library.filter(char => {
+        if (!query) return true;
+        const tipoName = TIPOS[char.tipo]?.name || '';
+        const archName = ARQUETIPOS[char.arquetipo]?.name || '';
+        const estName = ESTILOS[char.estilo]?.name || '';
+        const hay = `${char.name} ${tipoName} ${archName} ${estName} ${char.concept}`.toLowerCase();
+        return hay.includes(query);
+      });
 
       if (library.length === 0) {
         listEl.innerHTML = '';
@@ -1861,51 +1914,53 @@
 
       emptyEl.classList.add('hidden');
 
-      listEl.innerHTML = library.map(char => {
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<p class="text-center font-mono text-xs opacity-70 py-6">Nenhum sobrevivente encontrado para "${query}".</p>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(char => {
         const displayName = char.name && char.name.trim() ? char.name.trim() : 'Sobrevivente Sem Nome';
         const initial = displayName.charAt(0).toUpperCase();
-        const tipoName = TIPOS[char.tipo]?.name || 'Tipo indef.';
-        const archName = ARQUETIPOS[char.arquetipo]?.name || 'Sem Arquétipo';
-        const estiloName = ESTILOS[char.estilo]?.name || 'Estilo indef.';
+        const tipoName = TIPOS[char.tipo]?.name || 'Tipo indefinido';
+        const archName = ARQUETIPOS[char.arquetipo]?.name || 'Sem arquétipo';
+        const estName = ESTILOS[char.estilo]?.name || 'Estilo indefinido';
         const stats = getDerivedStats(char);
 
         return `
-          <div class="dossier-card p-3.5 sm:p-4 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-[3px_3px_0px_var(--border-main)] transition-shadow">
+          <div class="dossier-card p-3 sm:p-4 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-[3px_3px_0px_var(--border-main)] transition-shadow">
             <div class="flex items-center gap-3.5 min-w-0 cursor-pointer flex-1" onclick="openCharacterFromLibrary('${char.id}')">
-              <div class="w-12 h-12 shrink-0 border-2 border-current bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-mono text-xl font-black rounded-sm">
+              <div class="w-12 h-12 rounded-sm border-2 border-current bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-mono text-xl font-black shrink-0">
                 ${initial}
               </div>
               <div class="min-w-0 flex-1">
-                <h3 class="text-base sm:text-lg font-black truncate">${displayName}</h3>
-                <p class="font-mono text-xs opacity-80 truncate">
-                  ${tipoName} • ${archName} • ${estiloName}
-                </p>
-                <div class="flex flex-wrap items-center gap-2 mt-1 font-mono text-[10px] opacity-70">
-                  <span>PV: <b>${char.pvCurrent}/${stats.pvMax}</b></span>
-                  <span>•</span>
-                  <span>PC: <b>${char.pcCurrent}/${stats.pcMax}</b></span>
-                  <span>•</span>
-                  <span>Guarda: <b>${stats.guarda}</b></span>
-                  <span>•</span>
-                  <span>Registrado em ${char.createdAt || '—'}</span>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="font-black text-base sm:text-lg truncate">${displayName}</h3>
+                  <span class="font-mono text-[10px] px-1.5 py-0.5 dossier-box rounded-sm font-bold">
+                    PV ${char.pvCurrent}/${stats.pvMax} • PC ${char.pcCurrent}/${stats.pcMax}
+                  </span>
                 </div>
+                <p class="text-xs font-mono opacity-80 truncate mt-0.5">
+                  ${tipoName} • ${archName} • ${estName}
+                </p>
+                <span class="block font-mono text-[10px] opacity-60 mt-0.5">
+                  Registrado em ${char.createdAt || '--/--/--'}
+                </span>
               </div>
             </div>
 
             <div class="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-dashed border-current shrink-0">
-              <span class="font-mono text-xs font-black px-2 py-1 border border-current mr-1">
-                Nv. ${char.level}
-              </span>
+              <span class="font-mono text-sm font-black px-2 py-1">Nv. ${char.level}</span>
               <button onclick="openCharacterFromLibrary('${char.id}')" class="btn-tactical-solid px-3 py-1.5 text-xs rounded-sm">
-                Acessar Ficha
+                Abrir Ficha
               </button>
-              <button onclick="exportSingleFromLibrary('${char.id}')" class="btn-tactical w-8 h-8 text-xs rounded-sm flex items-center justify-center" title="Exportar JSON deste sobrevivente">
+              <button onclick="exportSingleFromLibrary('${char.id}')" class="btn-tactical w-8 h-8 text-xs rounded-sm flex items-center justify-center" title="Exportar este sobrevivente (.json)">
                 ↓
               </button>
-              <button onclick="duplicateCharacterInLibrary('${char.id}')" class="btn-tactical w-8 h-8 text-xs rounded-sm flex items-center justify-center" title="Duplicar sobrevivente">
+              <button onclick="duplicateCharacterInLibrary('${char.id}')" class="btn-tactical w-8 h-8 text-xs rounded-sm flex items-center justify-center" title="Duplicar ficha">
                 ⧉
               </button>
-              <button onclick="askDeleteCharacter('${char.id}')" class="btn-tactical w-8 h-8 text-xs rounded-sm flex items-center justify-center hover:!bg-red-800 hover:!border-red-800 hover:!text-white" title="Excluir sobrevivente">
+              <button onclick="askDeleteCharacter('${char.id}')" class="btn-danger w-8 h-8 text-xs rounded-sm flex items-center justify-center" title="Excluir ficha">
                 ✕
               </button>
             </div>
@@ -1918,6 +1973,9 @@
       const fresh = createBlankSurvivor('');
       library.unshift(fresh);
       saveLibrary();
+      if (currentUser && window.cloudAPI) {
+        window.cloudAPI.saveSurvivor(currentUser.uid, fresh);
+      }
       openCharacterFromLibrary(fresh.id);
       showToast('Nova ficha de sobrevivente criada.');
     }
@@ -1926,6 +1984,9 @@
       const ric = buildRicardoCharacter();
       library.unshift(ric);
       saveLibrary();
+      if (currentUser && window.cloudAPI) {
+        window.cloudAPI.saveSurvivor(currentUser.uid, ric);
+      }
       renderView();
       showToast('Ricardo Gomes adicionado à biblioteca!');
     }
@@ -1933,9 +1994,9 @@
     function openCharacterFromLibrary(charId) {
       const found = library.find(c => c.id === charId);
       if (!found) return;
-      activeCharId = found.id;
+      activeCharId = charId;
       state = { ...createBlankSurvivor(), ...found };
-      if (!Array.isArray(state.traumaTargets)) state.traumaTargets = ['', '', '', ''];
+      if (!state.permanentStressTargets) state.permanentStressTargets = ['', '', '', ''];
       currentView = 'sheet';
       renderView();
     }
@@ -1955,8 +2016,12 @@
       copy.id = 'surv_' + Date.now() + '_' + Math.random().toString(16).slice(2, 6);
       copy.name = (copy.name || 'Sobrevivente') + ' (Cópia)';
       copy.createdAt = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+      copy.updatedTimestamp = Date.now();
       library.unshift(copy);
       saveLibrary();
+      if (currentUser && window.cloudAPI) {
+        window.cloudAPI.saveSurvivor(currentUser.uid, copy);
+      }
       renderView();
       showToast(`Ficha duplicada: "${copy.name}".`);
     }
@@ -1965,7 +2030,7 @@
       const found = library.find(c => c.id === charId);
       if (!found) return;
       deleteTargetId = charId;
-      document.getElementById('confirm-delete-text').textContent = `Tem certeza que deseja excluir "${found.name || 'Sobrevivente Sem Nome'}" permanentemente?`;
+      document.getElementById('delete-target-name').textContent = found.name || 'Sobrevivente Sem Nome';
       document.getElementById('confirm-delete-modal').classList.remove('hidden');
       document.getElementById('confirm-delete-modal').classList.add('flex');
     }
@@ -1978,76 +2043,77 @@
 
     function confirmDeleteCharacter() {
       if (!deleteTargetId) return;
-      library = library.filter(c => c.id !== deleteTargetId);
+      const targetId = deleteTargetId;
+      library = library.filter(c => c.id !== targetId);
       saveLibrary();
+      if (currentUser && window.cloudAPI) {
+        window.cloudAPI.deleteSurvivor(currentUser.uid, targetId);
+      }
       closeConfirmDelete();
       renderView();
       showToast('Sobrevivente removido da biblioteca.');
     }
 
+    function exportAllLibrary() {
+      if (library.length === 0) {
+        showToast('A biblioteca está vazia.');
+        return;
+      }
+      downloadJSON(library, 'declinio_meus_sobreviventes.json');
+      showToast(`Biblioteca inteira exportada (${library.length} fichas).`);
+    }
+
     function exportSingleFromLibrary(charId) {
       const found = library.find(c => c.id === charId);
       if (!found) return;
-      downloadJSON(found, (found.name || 'sobrevivente_declinio').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json');
+      const slug = (found.name || 'sobrevivente').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      downloadJSON(found, `${slug}_declinio.json`);
+      showToast(`Ficha de "${found.name || 'Sobrevivente'}" exportada.`);
     }
 
-    function exportCurrentJSON() {
+    function exportCurrentCharacter() {
       if (!state) return;
       syncActiveCharacterToLibrary();
-      downloadJSON(state, (state.name || 'sobrevivente_declinio').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json');
+      const slug = (state.name || 'sobrevivente').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      downloadJSON(state, `${slug}_declinio.json`);
+      showToast(`Ficha exportada como ${slug}_declinio.json`);
     }
 
-    function exportAllJSON() {
-      if (library.length === 0) {
-        showToast('Biblioteca vazia para exportar.');
-        return;
-      }
-      downloadJSON({ system: 'DECLINIO_RPG_ALFA_01', characters: library }, 'biblioteca_declinio_rpg.json');
-    }
-
-    function downloadJSON(obj, filename) {
-      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(obj, null, 2));
+    function downloadJSON(dataObj, fileName) {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(dataObj, null, 2));
       const dl = document.createElement('a');
       dl.setAttribute('href', dataStr);
-      dl.setAttribute('download', filename);
+      dl.setAttribute('download', fileName);
       document.body.appendChild(dl);
       dl.click();
       dl.remove();
-      showToast(`Arquivo "${filename}" exportado!`);
     }
 
-    function importJSONToLibrary(event) {
+    function importToLibrary(event) {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(e) {
         try {
           const parsed = JSON.parse(e.target.result);
-          let importedList = [];
-          if (Array.isArray(parsed)) {
-            importedList = parsed;
-          } else if (parsed && Array.isArray(parsed.characters)) {
-            importedList = parsed.characters;
-          } else if (parsed && typeof parsed === 'object') {
-            importedList = [parsed];
-          }
-
-          if (importedList.length === 0) {
-            showToast('Nenhuma ficha encontrada no arquivo.');
-            return;
-          }
+          const importedList = Array.isArray(parsed) ? parsed : [parsed];
+          if (importedList.length === 0) return;
 
           importedList.forEach(item => {
             const clean = { ...createBlankSurvivor(), ...item };
             clean.id = 'surv_' + Date.now() + '_' + Math.random().toString(16).slice(2, 6);
+            clean.updatedTimestamp = Date.now();
             library.unshift(clean);
+            if (currentUser && window.cloudAPI) {
+              window.cloudAPI.saveSurvivor(currentUser.uid, clean);
+            }
           });
 
           saveLibrary();
           renderView();
           showToast(`${importedList.length} sobrevivente(s) importado(s) para a biblioteca!`);
         } catch (err) {
-          showToast('Erro ao importar JSON: arquivo inválido.');
+          showToast('Erro ao importar arquivo JSON: formato inválido.');
         }
       };
       reader.readAsText(file);
@@ -2055,19 +2121,17 @@
     }
 
     // =========================================================================
-    // 6. SHEET RENDERING & TACTICAL ABILITY SELECTION POPUP
+    // 5. SHEET UI RENDERING
     // =========================================================================
     function renderSheet() {
       if (!state) return;
       const stats = getDerivedStats();
 
-      // Page visibility
       document.getElementById('page-1').classList.toggle('hidden', state.activePage !== 1);
       document.getElementById('page-2').classList.toggle('hidden', state.activePage !== 2);
       document.getElementById('tab-p1').classList.toggle('active', state.activePage === 1);
       document.getElementById('tab-p2').classList.toggle('active', state.activePage === 2);
 
-      // Header & Basic inputs
       document.getElementById('char-name').value = state.name;
       document.getElementById('char-concept').value = state.concept;
       document.getElementById('char-tipo').value = state.tipo;
@@ -2075,12 +2139,10 @@
       document.getElementById('char-arquetipo').value = state.arquetipo;
       document.getElementById('char-level-display').textContent = state.level;
 
-      // Sync P2 Header
       document.getElementById('p2-char-name').textContent = state.name || 'SEM NOME';
       document.getElementById('p2-char-level').textContent = state.level;
       document.getElementById('p2-level-badge').textContent = state.level;
 
-      // Summaries
       const tipoObj = TIPOS[state.tipo];
       document.getElementById('tipo-summary').textContent = tipoObj
         ? `Bônus: +1 passo em ${tipoObj.attrBonus.toUpperCase()} | Perícias: ${formatSkillGrantText(tipoObj.skillGrants)} | Hab: ${tipoObj.abilityName}`
@@ -2092,22 +2154,10 @@
         : 'Define sua ordem natural na iniciativa e habilidades de Nível 1 e 6.';
 
       const archObj = ARQUETIPOS[state.arquetipo];
-      const archBtn = document.getElementById('btn-open-arch-modal');
-      if (archObj) {
-        archBtn.classList.remove('hidden');
-        const chosenLv1 = archObj.abilities.find(a => a.id === state.archAbilities.lv1);
-        document.getElementById('arquetipo-summary').textContent = chosenLv1
-          ? `Nv. 1: ${chosenLv1.name} (clique em "Escolher Hab." para trocar).`
-          : `Perícias treinadas aplicadas! Clique em "Escolher Hab." para selecionar sua habilidade de Nível 1.`;
-      } else {
-        archBtn.classList.add('hidden');
-        document.getElementById('arquetipo-summary').textContent = 'Concede 2 perícias treinadas (d8 e d6) e habilidades nos níveis 1, 3, 7 e 11.';
-      }
+      document.getElementById('arquetipo-summary').textContent = archObj
+        ? `Perícias treinadas concedidas automaticamente na grade abaixo.`
+        : 'Concede 2 perícias treinadas (d8 e d6) e habilidades nos níveis 1, 3, 7 e 11.';
 
-      // Check Pending Ability Choices Banner
-      renderPendingAbilitiesBanner();
-
-      // Level Milestone Hints
       const milestonesText = {
         1: 'Nv 1: Tipo + Estilo Nv1 + Hab. Arquétipo',
         2: 'Nv 2: +1 Habilidade Geral',
@@ -2127,10 +2177,8 @@
         ? `Próximo: ${milestonesText[state.level + 1]}`
         : 'NÍVEL MÁXIMO ALCANÇADO (12)';
 
-      // Attributes
       renderAttributes(stats.attrs);
 
-      // Vitals
       document.getElementById('pv-max').textContent = stats.pvMax;
       document.getElementById('pv-current').value = state.pvCurrent;
       document.getElementById('pv-formula-hint').textContent = tipoObj
@@ -2160,172 +2208,6 @@
       renderAbilitiesPage();
       renderPermanentStress();
       renderInventory(stats.slotsInfo);
-    }
-
-    function getPendingChoices() {
-      const pending = [];
-      if (state.arquetipo) {
-        const archSlots = [
-          { key: 'lv1', req: 1, label: 'Arquétipo (Nv. 1)' },
-          { key: 'lv3', req: 3, label: 'Arquétipo (Nv. 3)' },
-          { key: 'lv7', req: 7, label: 'Arquétipo (Nv. 7)' },
-          { key: 'lv11', req: 11, label: 'Arquétipo (Nv. 11)' }
-        ];
-        archSlots.forEach(s => {
-          if (state.level >= s.req && !state.archAbilities[s.key]) {
-            pending.push({ kind: 'arch', key: s.key, label: s.label });
-          }
-        });
-      }
-
-      const genSlots = [
-        { key: 'lv2', req: 2, label: 'Hab. Geral (Nv. 2)' },
-        { key: 'lv4', req: 4, label: 'Hab. Geral (Nv. 4)' },
-        { key: 'lv5', req: 5, label: 'Hab. Geral (Nv. 5)' },
-        { key: 'lv8', req: 8, label: 'Hab. Geral (Nv. 8)' },
-        { key: 'lv9', req: 9, label: 'Hab. Geral (Nv. 9)' },
-        { key: 'lv12', req: 12, label: 'Hab. Geral (Nv. 12)' }
-      ];
-      genSlots.forEach(s => {
-        if (state.level >= s.req && !state.genAbilities[s.key]) {
-          pending.push({ kind: 'gen', key: s.key, label: s.label });
-        }
-      });
-
-      return pending;
-    }
-
-    function renderPendingAbilitiesBanner() {
-      const banner = document.getElementById('pending-abilities-banner');
-      const btnsEl = document.getElementById('pending-abilities-buttons');
-      const pending = getPendingChoices();
-
-      if (pending.length === 0) {
-        banner.classList.add('hidden');
-        return;
-      }
-
-      banner.classList.remove('hidden');
-      btnsEl.innerHTML = pending.map(p => `
-        <button onclick="openAbilityModal('${p.kind}', '${p.key}')" class="btn-tactical-solid px-2.5 py-1 text-[10px] rounded-sm">
-          Escolher: ${p.label}
-        </button>
-      `).join('');
-    }
-
-    // POP-UP MODAL PARA ESCOLHA DE HABILIDADES
-    function openAbilityModal(kind, milestoneKey) {
-      modalContext = { kind, milestoneKey };
-      const modal = document.getElementById('ability-select-modal');
-      const kicker = document.getElementById('ability-modal-kicker');
-      const title = document.getElementById('ability-modal-title');
-      const subtitle = document.getElementById('ability-modal-subtitle');
-      const container = document.getElementById('ability-modal-options');
-
-      const reqLevel = parseInt(milestoneKey.replace('lv', ''), 10);
-
-      if (kind === 'arch') {
-        const archObj = ARQUETIPOS[state.arquetipo];
-        if (!archObj) {
-          showToast('Selecione primeiro um Arquétipo.');
-          return;
-        }
-        kicker.textContent = `ARQUÉTIPO: ${archObj.name.toUpperCase()} // MARCO DE NÍVEL ${reqLevel}`;
-        title.textContent = `ESCOLHER HABILIDADE DE ${archObj.name.toUpperCase()}`;
-        subtitle.textContent = `Selecione uma das 4 habilidades exclusivas abaixo. Após escolhida, ela será adicionada à lista da Página 02.`;
-
-        const currentSelected = state.archAbilities[milestoneKey];
-        const alreadyChosenOthers = Object.entries(state.archAbilities)
-          .filter(([k]) => k !== milestoneKey)
-          .map(([, v]) => v);
-
-        container.innerHTML = archObj.abilities.map(ab => {
-          const isCurrent = currentSelected === ab.id;
-          const isTaken = alreadyChosenOthers.includes(ab.id);
-
-          return `
-            <div class="dossier-card p-3.5 rounded-sm flex flex-col justify-between gap-3 ${isCurrent ? 'border-2 border-current ring-1 ring-current' : ''} ${isTaken ? 'opacity-50' : ''}">
-              <div>
-                <div class="flex items-start justify-between gap-2 mb-1.5">
-                  <h4 class="font-mono text-sm font-black uppercase">${ab.name}</h4>
-                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 dossier-box shrink-0">${ab.cost}</span>
-                </div>
-                <p class="text-xs leading-relaxed">${ab.desc}</p>
-              </div>
-              <div class="pt-1 flex justify-end">
-                <button onclick="confirmModalAbilitySelection('${ab.id}')" ${isTaken ? 'disabled' : ''} class="${isCurrent ? 'btn-tactical' : 'btn-tactical-solid'} w-full py-2 text-xs rounded-sm">
-                  ${isTaken ? 'Já Adquirida em Outro Nível' : (isCurrent ? '✓ Habilidade Atual (Manter)' : 'Escolher Habilidade')}
-                </button>
-              </div>
-            </div>
-          `;
-        }).join('');
-
-      } else if (kind === 'gen') {
-        kicker.textContent = `SOBREVIVÊNCIA NA PRÁTICA // MARCO DE NÍVEL ${reqLevel}`;
-        title.textContent = `ESCOLHER HABILIDADE GERAL (NÍVEL ${reqLevel})`;
-        subtitle.textContent = `Selecione um talento adquirido na prática brutal da sobrevivência (pré-requisitos verificados automaticamente).`;
-
-        const currentSelected = state.genAbilities[milestoneKey];
-
-        container.innerHTML = GENERAL_ABILITIES.map(g => {
-          const isCurrent = currentSelected === g.id;
-          const valid = checkGenPrereq(g, milestoneKey);
-
-          return `
-            <div class="dossier-card p-3.5 rounded-sm flex flex-col justify-between gap-3 ${isCurrent ? 'border-2 border-current ring-1 ring-current' : ''} ${!valid && !isCurrent ? 'opacity-50' : ''}">
-              <div>
-                <div class="flex items-start justify-between gap-2 mb-1">
-                  <h4 class="font-mono text-sm font-black uppercase">${g.name}</h4>
-                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 dossier-box shrink-0">${g.prereqText}</span>
-                </div>
-                <p class="text-xs leading-relaxed">${g.desc}</p>
-              </div>
-              <div class="pt-1 flex justify-end">
-                <button onclick="confirmModalAbilitySelection('${g.id}')" ${!valid && !isCurrent ? 'disabled' : ''} class="${isCurrent ? 'btn-tactical' : 'btn-tactical-solid'} w-full py-2 text-xs rounded-sm">
-                  ${!valid && !isCurrent ? 'Pré-Requisito Não Cumprido' : (isCurrent ? '✓ Habilidade Atual (Manter)' : 'Escolher Habilidade Geral')}
-                </button>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeAbilityModal() {
-      document.getElementById('ability-select-modal').classList.add('hidden');
-      document.getElementById('ability-select-modal').classList.remove('flex');
-      modalContext = { kind: null, milestoneKey: null };
-    }
-
-    function confirmModalAbilitySelection(selectedId) {
-      const { kind, milestoneKey } = modalContext;
-      if (!kind || !milestoneKey) return;
-
-      const oldStats = getDerivedStats();
-
-      if (kind === 'arch') {
-        state.archAbilities[milestoneKey] = selectedId;
-        const archObj = ARQUETIPOS[state.arquetipo];
-        const ab = archObj?.abilities.find(a => a.id === selectedId);
-        showToast(`Habilidade "${ab?.name}" adicionada à ficha!`);
-      } else if (kind === 'gen') {
-        state.genAbilities[milestoneKey] = selectedId;
-        const gen = GENERAL_ABILITIES.find(g => g.id === selectedId);
-        showToast(`Habilidade Geral "${gen?.name}" adicionada à ficha!`);
-      }
-
-      const newStats = getDerivedStats();
-      const pvDiff = newStats.pvMax - oldStats.pvMax;
-      const pcDiff = newStats.pcMax - oldStats.pcMax;
-      if (pvDiff !== 0) state.pvCurrent = Math.max(0, Math.min(newStats.pvMax, state.pvCurrent + pvDiff));
-      if (pcDiff !== 0) state.pcCurrent = Math.max(0, Math.min(newStats.pcMax, state.pcCurrent + pcDiff));
-
-      closeAbilityModal();
-      saveAndRender();
     }
 
     function formatSkillGrantText(grants) {
@@ -2359,14 +2241,13 @@
       }
 
       const tipoObj = TIPOS[state.tipo];
-      const targets = state.traumaTargets || ['', '', '', ''];
 
       container.innerHTML = attrList.map(a => {
         const isTipoBonus = !state.freeMode && tipoObj && tipoObj.attrBonus === a.id;
         const baseDie = state.baseAttributes[a.id];
         const finalDie = finalAttrs[a.id];
         const options = state.freeMode ? DICE_STEPS : ['d6', 'd8'];
-        const hasAttrTrauma = (state.permanentStress || []).some((txt, idx) => getTraumaType(txt) === 'attr' && targets[idx] === a.id);
+        const hasTraumaPenalty = (state.permanentStress || []).some((pText, idx) => pText && pText.startsWith('4.') && (state.permanentStressTargets || [])[idx] === a.id);
 
         return `
           <div class="dossier-card p-2 rounded-sm flex items-center justify-between gap-2">
@@ -2375,7 +2256,7 @@
                 <span class="font-mono text-sm font-black tracking-wide">${a.label}</span>
                 ${isTipoBonus ? `<span class="font-mono text-[9px] px-1 border border-current font-bold">+1 TIPO</span>` : ''}
                 ${state.attrDeltas[a.id] > 0 ? `<span class="font-mono text-[9px] px-1 border border-current font-bold">+${state.attrDeltas[a.id]} NV</span>` : ''}
-                ${hasAttrTrauma ? `<span class="font-mono text-[9px] px-1 bg-red-800 text-white font-bold">-1 SEQUELA</span>` : ''}
+                ${hasTraumaPenalty ? `<span class="font-mono text-[9px] px-1 bg-red-800 text-white font-bold">-1 SEQUELA</span>` : ''}
               </div>
               <span class="block text-[10px] opacity-70">${a.sub}</span>
             </div>
@@ -2450,7 +2331,6 @@
       const categories = ['TÉCNICAS', 'SOCIAIS', 'COMBATE', 'GERAIS'];
       const arch = ARQUETIPOS[state.arquetipo];
       const tipoObj = TIPOS[state.tipo];
-      const targets = state.traumaTargets || ['', '', '', ''];
 
       const tracker = document.getElementById('skill-budget-tracker');
       if (tipoObj) {
@@ -2481,7 +2361,7 @@
                 const isTipoD6 = state.tipoSkillChoices.d6.includes(skill.id);
                 const isTipoD8 = state.tipoSkillChoices.d8.includes(skill.id);
                 const isTipoD10 = state.tipoSkillChoices.d10.includes(skill.id);
-                const hasSkillTrauma = (state.permanentStress || []).some((txt, idx) => getTraumaType(txt) === 'skill' && targets[idx] === skill.id);
+                const hasTraumaSkillPenalty = (state.permanentStress || []).some((pText, idx) => pText && pText.startsWith('5.') && (state.permanentStressTargets || [])[idx] === skill.id);
 
                 let subInfo = '';
                 const maxVal = dieMax(die);
@@ -2500,7 +2380,7 @@
                         <span class="text-xs font-bold truncate">${skill.name}</span>
                         ${archDie ? `<span class="font-mono text-[9px] px-1 border border-current font-bold" title="Concedida pelo Arquétipo">ARQ</span>` : ''}
                         ${(isTipoD6 || isTipoD8 || isTipoD10) ? `<span class="font-mono text-[9px] px-1 border border-current font-bold" title="Escolhida pelo Tipo">TIPO</span>` : ''}
-                        ${hasSkillTrauma ? `<span class="font-mono text-[9px] px-1 bg-red-800 text-white font-bold" title="Reduzida por Sequela Permanente">-1 SEQ</span>` : ''}
+                        ${hasTraumaSkillPenalty ? `<span class="font-mono text-[9px] px-1 bg-red-800 text-white font-bold" title="Penalidade de Sequela Permanente">-1 SEQ</span>` : ''}
                       </div>
                       ${subInfo ? `<span class="block font-mono text-[9px] opacity-70">${subInfo}</span>` : ''}
                     </div>
@@ -2532,6 +2412,9 @@
       }).join('');
     }
 
+    // =========================================================================
+    // 6. CLEAN ABILITIES LIST & POP-UP ABILITY PICKER
+    // =========================================================================
     function renderAbilitiesPage() {
       const container = document.getElementById('abilities-list');
       const blocks = [];
@@ -2596,7 +2479,7 @@
         }
       }
 
-      // 3. ARQUÉTIPO ABILITIES (CLEAN LIST + "ALTERAR" BUTTON OPENING POPUP)
+      // 3. ARQUÉTIPO ABILITIES (Clean List + Button to open Popup)
       const archObj = ARQUETIPOS[state.arquetipo];
       if (archObj) {
         const archMilestones = [
@@ -2612,11 +2495,6 @@
             const chosenAb = archObj.abilities.find(a => a.id === chosenId);
 
             if (chosenAb) {
-              const isFW = chosenAb.id === 'forca_vontade';
-              const fwStatus = isFW
-                ? (state.level >= m.req + 1 ? 'Bônus ativo: +4 PV e +4 PC máximos' : `Bônus ativo: +2 PV e +2 PC máximos (+2/+2 no Nv. ${m.req + 1})`)
-                : '';
-
               blocks.push(`
                 <div class="dossier-card p-3 rounded-sm">
                   <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -2624,16 +2502,19 @@
                       <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">${m.label}</span>
                       <h4 class="font-mono text-sm font-black uppercase">${chosenAb.name}</h4>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="font-mono text-[11px] font-bold opacity-80">Custo: ${chosenAb.cost}</span>
+                    <div class="flex items-center gap-1.5 no-print">
                       ${renderQuickCostButton(chosenAb)}
-                      <button onclick="openAbilityModal('arch', '${m.key}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print">
+                      <button onclick="openAbilityPickerModal('arch', '${m.key}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm">
                         Alterar
                       </button>
                     </div>
                   </div>
                   <p class="text-xs leading-relaxed">${chosenAb.desc}</p>
-                  ${fwStatus ? `<p class="font-mono text-[10px] font-bold mt-1 opacity-85">${fwStatus}</p>` : ''}
+                  ${chosenAb.id === 'forca_vontade' ? `
+                    <p class="font-mono text-[10px] font-bold mt-1 opacity-80">
+                      Bônus ativo: ${state.level >= m.req + 1 ? '+4 PV / +4 PC Máx. (Nível ' + m.req + ' e ' + (m.req + 1) + ')' : '+2 PV / +2 PC Máx. (Receberá +2/+2 adicionais no Nível ' + (m.req + 1) + ')'}
+                    </p>
+                  ` : ''}
                 </div>
               `);
             } else {
@@ -2641,9 +2522,9 @@
                 <div class="dossier-card p-3 rounded-sm border-dashed flex items-center justify-between gap-2">
                   <div>
                     <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">${m.label}</span>
-                    <span class="font-mono text-xs font-bold ml-2">Nenhuma habilidade selecionada para este marco</span>
+                    <span class="font-mono text-xs font-bold ml-2">Habilidade de ${archObj.name} pendente</span>
                   </div>
-                  <button onclick="openAbilityModal('arch', '${m.key}')" class="btn-tactical-solid px-3 py-1.5 text-[10px] rounded-sm no-print">
+                  <button onclick="openAbilityPickerModal('arch', '${m.key}')" class="btn-tactical-solid px-3 py-1.5 text-xs rounded-sm no-print">
                     Escolher Habilidade
                   </button>
                 </div>
@@ -2653,7 +2534,7 @@
         });
       }
 
-      // 4. HABILIDADES GERAIS (CLEAN LIST + "ALTERAR" BUTTON OPENING POPUP)
+      // 4. HABILIDADES GERAIS (Clean List + Button to open Popup)
       const genMilestones = [
         { key: 'lv2', req: 2 },
         { key: 'lv4', req: 4 },
@@ -2676,12 +2557,9 @@
                     <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">HAB. GERAL // NV. ${m.req}</span>
                     <h4 class="font-mono text-sm font-black uppercase">${chosenGen.name}</h4>
                   </div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-mono text-[10px] opacity-75">[${chosenGen.prereqText}]</span>
-                    <button onclick="openAbilityModal('gen', '${m.key}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print">
-                      Alterar
-                    </button>
-                  </div>
+                  <button onclick="openAbilityPickerModal('gen', '${m.key}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm no-print">
+                    Alterar
+                  </button>
                 </div>
                 <p class="text-xs leading-relaxed">${chosenGen.desc}</p>
                 ${chosenGen.id === 'aumento_atributo' ? renderAttrBoostControls() : ''}
@@ -2692,10 +2570,10 @@
               <div class="dossier-card p-3 rounded-sm border-dashed flex items-center justify-between gap-2">
                 <div>
                   <span class="font-mono text-[10px] px-1.5 py-0.5 border border-current font-bold">HAB. GERAL // NV. ${m.req}</span>
-                  <span class="font-mono text-xs font-bold ml-2">Escolha de Habilidade Geral disponível</span>
+                  <span class="font-mono text-xs font-bold ml-2">Habilidade Geral pendente</span>
                 </div>
-                <button onclick="openAbilityModal('gen', '${m.key}')" class="btn-tactical-solid px-3 py-1.5 text-[10px] rounded-sm no-print">
-                  Escolher Habilidade Geral
+                <button onclick="openAbilityPickerModal('gen', '${m.key}')" class="btn-tactical-solid px-3 py-1.5 text-xs rounded-sm no-print">
+                  Escolher Habilidade
                 </button>
               </div>
             `);
@@ -2710,14 +2588,115 @@
       }
     }
 
+    function openAbilityPickerModal(kind, milestoneKey) {
+      modalContext = { kind, milestoneKey };
+      const titleEl = document.getElementById('picker-title');
+      const subEl = document.getElementById('picker-subtitle');
+      const container = document.getElementById('picker-options-container');
+      const reqNum = milestoneKey.replace('lv', '');
+
+      if (kind === 'arch') {
+        const archObj = ARQUETIPOS[state.arquetipo];
+        if (!archObj) return;
+        subEl.textContent = `ARQUÉTIPO: ${archObj.name.toUpperCase()} // NÍVEL ${reqNum}`;
+        titleEl.textContent = `ESCOLHA UMA HABILIDADE DE ${archObj.name.toUpperCase()}`;
+
+        const alreadyChosenIds = Object.entries(state.archAbilities)
+          .filter(([k]) => k !== milestoneKey)
+          .map(([, v]) => v);
+        const currentChosen = state.archAbilities[milestoneKey];
+
+        container.innerHTML = archObj.abilities.map(ab => {
+          const isTaken = alreadyChosenIds.includes(ab.id);
+          const isCurrent = currentChosen === ab.id;
+          return `
+            <div class="dossier-card p-3 rounded-sm flex flex-col justify-between gap-2 ${isTaken ? 'opacity-45' : ''}">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <h4 class="font-mono text-sm font-black uppercase">${ab.name}</h4>
+                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 border border-current shrink-0">${ab.cost}</span>
+                </div>
+                <p class="text-xs leading-relaxed opacity-85">${ab.desc}</p>
+              </div>
+              <div class="pt-1 flex justify-end">
+                <button onclick="confirmPickAbility('${ab.id}')" ${isTaken ? 'disabled' : ''} class="${isCurrent ? 'btn-tactical' : 'btn-tactical-solid'} px-3 py-1.5 text-xs rounded-sm w-full">
+                  ${isTaken ? 'Já adquirida em outro nível' : (isCurrent ? '✓ Selecionada' : 'Escolher Habilidade')}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        subEl.textContent = `PROGRESSÃO DE SOBREVIVENTE // NÍVEL ${reqNum}`;
+        titleEl.textContent = `ESCOLHA UMA HABILIDADE GERAL (NV. ${reqNum})`;
+        const currentChosen = state.genAbilities[milestoneKey];
+
+        container.innerHTML = GENERAL_ABILITIES.map(g => {
+          const valid = checkGenPrereq(g, milestoneKey);
+          const isCurrent = currentChosen === g.id;
+          return `
+            <div class="dossier-card p-3 rounded-sm flex flex-col justify-between gap-2 ${!valid && !isCurrent ? 'opacity-45' : ''}">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <h4 class="font-mono text-sm font-black uppercase">${g.name}</h4>
+                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 dossier-box shrink-0">${g.prereqText}</span>
+                </div>
+                <p class="text-xs leading-relaxed opacity-85">${g.desc}</p>
+              </div>
+              <div class="pt-1 flex justify-end">
+                <button onclick="confirmPickAbility('${g.id}')" ${!valid && !isCurrent ? 'disabled' : ''} class="${isCurrent ? 'btn-tactical' : 'btn-tactical-solid'} px-3 py-1.5 text-xs rounded-sm w-full">
+                  ${!valid && !isCurrent ? 'Pré-requisito não cumprido' : (isCurrent ? '✓ Selecionada' : 'Escolher Habilidade')}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('ability-picker-modal').classList.remove('hidden');
+      document.getElementById('ability-picker-modal').classList.add('flex');
+    }
+
+    function closeAbilityPickerModal() {
+      document.getElementById('ability-picker-modal').classList.add('hidden');
+      document.getElementById('ability-picker-modal').classList.remove('flex');
+    }
+
+    function confirmPickAbility(abilityId) {
+      const { kind, milestoneKey } = modalContext;
+      if (!kind || !milestoneKey) return;
+
+      const oldStats = getDerivedStats();
+
+      if (kind === 'arch') {
+        state.archAbilities[milestoneKey] = abilityId;
+        const archObj = ARQUETIPOS[state.arquetipo];
+        const ab = archObj?.abilities.find(a => a.id === abilityId);
+        if (ab) showToast(`Habilidade adquirida: ${ab.name}!`);
+      } else {
+        state.genAbilities[milestoneKey] = abilityId;
+        const gen = GENERAL_ABILITIES.find(g => g.id === abilityId);
+        if (gen) showToast(`Habilidade Geral adquirida: ${gen.name}!`);
+      }
+
+      const newStats = getDerivedStats();
+      const pvDiff = newStats.pvMax - oldStats.pvMax;
+      const pcDiff = newStats.pcMax - oldStats.pcMax;
+      if (pvDiff !== 0) state.pvCurrent = Math.max(0, Math.min(newStats.pvMax, state.pvCurrent + pvDiff));
+      if (pcDiff !== 0) state.pcCurrent = Math.max(0, Math.min(newStats.pcMax, state.pcCurrent + pcDiff));
+
+      closeAbilityPickerModal();
+      saveAndRender();
+    }
+
     function renderQuickCostButton(ab) {
       const pcMatch = ab.cost.match(/^(\d+)\s*PC/i);
       if (pcMatch) {
         const amt = parseInt(pcMatch[1], 10);
-        return `<button onclick="spendPC(${amt}, '${ab.name}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm shrink-0 no-print">Gastar ${amt} PC</button>`;
+        return `<button onclick="spendPC(${amt}, '${ab.name}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm shrink-0">Gastar ${amt} PC</button>`;
       }
       if (ab.cost.toLowerCase().includes('estresse')) {
-        return `<button onclick="addStress(1, '${ab.name}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm shrink-0 no-print">+1 Estresse</button>`;
+        return `<button onclick="addStress(1, '${ab.name}')" class="btn-tactical px-2 py-0.5 text-[10px] rounded-sm shrink-0">+1 Estresse</button>`;
       }
       return '';
     }
@@ -2725,7 +2704,7 @@
     function renderAttrBoostControls() {
       return `
         <div class="mt-2 pt-2 border-t border-dashed border-current flex flex-wrap items-center gap-2 no-print">
-          <span class="font-mono text-[10px] font-bold">Aplicar aumento de passo (+1):</span>
+          <span class="font-mono text-[10px] font-bold">Ajustar Atributos (+1 passo):</span>
           ${['corpo', 'intelecto', 'alma'].map(k => `
             <div class="flex items-center gap-1 font-mono text-[11px]">
               <span class="uppercase font-bold">${k}:</span>
@@ -2743,7 +2722,6 @@
         .filter(([k, v]) => k !== currentSlotKey && v === gen.id);
       if (!gen.repeatable && !gen.maxCount && otherSelected.length > 0) return false;
       if (gen.maxCount && otherSelected.length >= gen.maxCount) return false;
-
       if (gen.prereqLevel && state.level < gen.prereqLevel) return false;
 
       if (gen.prereqSkill) {
@@ -2764,13 +2742,9 @@
 
     function renderPermanentStress() {
       const container = document.getElementById('permanent-stress-list');
-      const warnEl = document.getElementById('unplayable-warning');
-      const count = state.permanentStress.filter(s => s && s.trim() !== '').length;
-      warnEl.classList.toggle('hidden', count < 5);
-
-      if (!Array.isArray(state.traumaTargets)) {
-        state.traumaTargets = ['', '', '', ''];
-      }
+      const unplayableWarn = document.getElementById('unplayable-warning');
+      const count = (state.permanentStress || []).filter(s => s && s.trim() !== '').length;
+      unplayableWarn.classList.toggle('hidden', count < 5);
 
       const presets = [
         '1. Redução de PV Permanente (-2 PV Máx.)',
@@ -2784,51 +2758,44 @@
         '9. Alma Cansada (-1 fixo em ALMA)'
       ];
 
-      const currentAttrs = getFinalAttributes();
+      if (!state.permanentStressTargets) state.permanentStressTargets = ['', '', '', ''];
+
+      const trainedSkills = SKILLS_DATA.filter(sk => {
+        const currentTarget = state.permanentStressTargets.includes(sk.id);
+        return getSkillDie(sk.id) !== 'd4' || currentTarget;
+      });
 
       container.innerHTML = [0, 1, 2, 3].map(idx => {
         const val = state.permanentStress[idx] || '';
-        const tType = getTraumaType(val);
-        const targetId = state.traumaTargets[idx] || '';
+        const targetVal = state.permanentStressTargets[idx] || '';
+        const isAttrTrauma = val.startsWith('4.');
+        const isSkillTrauma = val.startsWith('5.');
 
-        let targetSelectorHTML = '';
-        if (tType === 'attr') {
-          targetSelectorHTML = `
-            <div class="mt-2 pt-2 border-t border-dashed border-current">
-              <label class="block font-mono text-[10px] font-bold uppercase text-red-700 dark:text-red-400 mb-1">
-                Selecione o Atributo reduzido (-1 passo):
-              </label>
-              <select onchange="setTraumaTarget(${idx}, this.value)" class="dossier-input w-full font-mono text-xs font-bold px-2 py-1 rounded-sm">
+        let extraSelectorHTML = '';
+        if (isAttrTrauma) {
+          extraSelectorHTML = `
+            <div class="mt-1.5 pt-1.5 border-t border-dashed border-current flex items-center justify-between gap-2">
+              <span class="font-mono text-[10px] font-bold text-red-700 dark:text-red-400">Atributo afetado (-1 passo):</span>
+              <select onchange="setPermanentStressTarget(${idx}, this.value)" class="dossier-input font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
                 <option value="">-- Escolher Atributo --</option>
-                <option value="corpo" ${targetId === 'corpo' ? 'selected' : ''}>CORPO (Atual: ${currentAttrs.corpo})</option>
-                <option value="intelecto" ${targetId === 'intelecto' ? 'selected' : ''}>INTELECTO (Atual: ${currentAttrs.intelecto})</option>
-                <option value="alma" ${targetId === 'alma' ? 'selected' : ''}>ALMA (Atual: ${currentAttrs.alma})</option>
+                <option value="corpo" ${targetVal === 'corpo' ? 'selected' : ''}>CORPO</option>
+                <option value="intelecto" ${targetVal === 'intelecto' ? 'selected' : ''}>INTELECTO</option>
+                <option value="alma" ${targetVal === 'alma' ? 'selected' : ''}>ALMA</option>
               </select>
             </div>
           `;
-        } else if (tType === 'skill') {
-          // Filter trained skills (die > d4 before this trauma slot, or currently selected in this slot)
-          const trainedSkills = SKILLS_DATA.filter(sk => {
-            const dieBeforeThisTrauma = getSkillDie(sk.id, state, idx);
-            return dieBeforeThisTrauma !== 'd4' || targetId === sk.id;
-          });
-
-          targetSelectorHTML = `
-            <div class="mt-2 pt-2 border-t border-dashed border-current">
-              <label class="block font-mono text-[10px] font-bold uppercase text-red-700 dark:text-red-400 mb-1">
-                Selecione a Perícia Treinada reduzida (-1 passo):
-              </label>
-              ${trainedSkills.length > 0 ? `
-                <select onchange="setTraumaTarget(${idx}, this.value)" class="dossier-input w-full font-mono text-xs font-bold px-2 py-1 rounded-sm">
-                  <option value="">-- Escolher Perícia Treinada --</option>
-                  ${trainedSkills.map(sk => {
-                    const curDie = getSkillDie(sk.id);
-                    return `<option value="${sk.id}" ${targetId === sk.id ? 'selected' : ''}>${sk.name} (Atual: ${curDie})</option>`;
-                  }).join('')}
-                </select>
-              ` : `
-                <p class="font-mono text-[10px] opacity-75 italic">Nenhuma perícia treinada (acima de d4) disponível para reduzir.</p>
-              `}
+        } else if (isSkillTrauma) {
+          extraSelectorHTML = `
+            <div class="mt-1.5 pt-1.5 border-t border-dashed border-current flex items-center justify-between gap-2">
+              <span class="font-mono text-[10px] font-bold text-red-700 dark:text-red-400">Perícia afetada (-1 passo):</span>
+              <select onchange="setPermanentStressTarget(${idx}, this.value)" class="dossier-input font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-sm max-w-[165px]">
+                <option value="">-- Escolher Perícia --</option>
+                ${trainedSkills.map(sk => `
+                  <option value="${sk.id}" ${targetVal === sk.id ? 'selected' : ''}>
+                    ${sk.name} (${getSkillDie(sk.id)})
+                  </option>
+                `).join('')}
+              </select>
             </div>
           `;
         }
@@ -2839,11 +2806,11 @@
               <span class="font-mono text-[11px] font-black">SEQUELA 0${idx + 1}.</span>
               <select onchange="if(this.value) setPermanentStress(${idx}, this.value)" class="dossier-input font-mono text-[10px] px-1 py-0.5 rounded-sm max-w-[170px] no-print">
                 <option value="">-- Tabela 1d10 --</option>
-                ${presets.map(p => `<option value="${p}" ${val === p ? 'selected' : ''}>${p}</option>`).join('')}
+                ${presets.map(p => `<option value="${p}">${p}</option>`).join('')}
               </select>
             </div>
             <input type="text" value="${val.replace(/"/g, '&quot;')}" oninput="setPermanentStress(${idx}, this.value)" placeholder="Descreva a sequela permanente..." class="dossier-input w-full px-2 py-1 text-xs rounded-sm" />
-            ${targetSelectorHTML}
+            ${extraSelectorHTML}
           </div>
         `;
       }).join('');
@@ -3077,7 +3044,7 @@
     }
 
     // =========================================================================
-    // 8. INTERACTION HANDLERS
+    // 8. SHEET INTERACTION HANDLERS
     // =========================================================================
     function switchPage(pageNum) {
       state.activePage = pageNum;
@@ -3119,8 +3086,7 @@
       state.archAbilities = { lv1: '', lv3: '', lv7: '', lv11: '' };
       saveAndRender();
       if (archId) {
-        showToast(`Arquétipo ${ARQUETIPOS[archId].name} selecionado! Escolha sua habilidade inicial.`);
-        openAbilityModal('arch', 'lv1');
+        openAbilityPickerModal('arch', 'lv1');
       }
     }
 
@@ -3137,18 +3103,21 @@
       state.pcCurrent = Math.max(0, Math.min(newStats.pcMax, state.pcCurrent + pcDiff));
 
       saveAndRender();
-      showToast(`Sobrevivente agora está no Nível ${newLv}.`);
 
       if (delta > 0) {
-        const archMilestones = { 3: 'lv3', 7: 'lv7', 11: 'lv11' };
-        const genMilestones = { 2: 'lv2', 4: 'lv4', 5: 'lv5', 8: 'lv8', 9: 'lv9', 12: 'lv12' };
-
-        if (archMilestones[newLv] && state.arquetipo && !state.archAbilities[archMilestones[newLv]]) {
-          openAbilityModal('arch', archMilestones[newLv]);
-        } else if (genMilestones[newLv] && !state.genAbilities[genMilestones[newLv]]) {
-          openAbilityModal('gen', genMilestones[newLv]);
+        const archMap = { 3: 'lv3', 7: 'lv7', 11: 'lv11' };
+        const genMap = { 2: 'lv2', 4: 'lv4', 5: 'lv5', 8: 'lv8', 9: 'lv9', 12: 'lv12' };
+        if (archMap[newLv] && state.arquetipo && !state.archAbilities[archMap[newLv]]) {
+          openAbilityPickerModal('arch', archMap[newLv]);
+          return;
+        }
+        if (genMap[newLv] && !state.genAbilities[genMap[newLv]]) {
+          openAbilityPickerModal('gen', genMap[newLv]);
+          return;
         }
       }
+
+      showToast(`Sobrevivente agora está no Nível ${newLv}.`);
     }
 
     function toggleFreeMode() {
@@ -3311,43 +3280,27 @@
     }
 
     function setPermanentStress(idx, val) {
-      const oldType = getTraumaType(state.permanentStress[idx]);
-      const newType = getTraumaType(val);
       state.permanentStress[idx] = val;
-
-      if (!Array.isArray(state.traumaTargets)) {
-        state.traumaTargets = ['', '', '', ''];
+      if (!state.permanentStressTargets) state.permanentStressTargets = ['', '', '', ''];
+      if (!val.startsWith('4.') && !val.startsWith('5.')) {
+        state.permanentStressTargets[idx] = '';
       }
-      // Clear target if trauma type changed or was cleared
-      if (oldType !== newType) {
-        state.traumaTargets[idx] = '';
-      }
-
       const stats = getDerivedStats();
-      if (state.pvCurrent > stats.pvMax) state.pvCurrent = stats.pvMax;
-      if (state.pcCurrent > stats.pcMax) state.pcCurrent = stats.pcMax;
+      state.pvCurrent = Math.min(stats.pvMax, state.pvCurrent);
+      state.pcCurrent = Math.min(stats.pcMax, state.pcCurrent);
       saveAndRender();
     }
 
-    function setTraumaTarget(idx, targetId) {
-      if (!Array.isArray(state.traumaTargets)) {
-        state.traumaTargets = ['', '', '', ''];
-      }
-      state.traumaTargets[idx] = targetId;
-
+    function setPermanentStressTarget(idx, targetId) {
+      if (!state.permanentStressTargets) state.permanentStressTargets = ['', '', '', ''];
+      state.permanentStressTargets[idx] = targetId;
       const stats = getDerivedStats();
-      if (state.pvCurrent > stats.pvMax) state.pvCurrent = stats.pvMax;
-      if (state.pcCurrent > stats.pcMax) state.pcCurrent = stats.pcMax;
+      state.pvCurrent = Math.min(stats.pvMax, state.pvCurrent);
+      state.pcCurrent = Math.min(stats.pcMax, state.pcCurrent);
       saveAndRender();
-
-      if (targetId) {
-        const attrNames = { corpo: 'CORPO', intelecto: 'INTELECTO', alma: 'ALMA' };
-        const sk = SKILLS_DATA.find(s => s.id === targetId);
-        const label = attrNames[targetId] || (sk ? sk.name : targetId);
-        showToast(`Sequela aplicada: -1 passo em ${label}.`);
-      }
     }
 
+    // Rests
     function openAlertRestModal() {
       const bonus = hasGenAbility('recuperacao_rapida') ? 6 : 4;
       document.getElementById('alert-rest-vitals-desc').textContent = `Recupera +${bonus} PV e +${bonus} PC.`;
@@ -3731,6 +3684,10 @@
     function saveAndRender() {
       syncActiveCharacterToLibrary();
       renderSheet();
+      const ind = document.getElementById('save-indicator');
+      if (ind) {
+        ind.textContent = currentUser ? '☁ Sincronizado na nuvem' : '● Salvo localmente';
+      }
     }
 
     function openRulesModal() {
@@ -3755,7 +3712,219 @@
       }, 3200);
     }
 
-    window.addEventListener('DOMContentLoaded', init);
+    // Cloud UI Helper Functions
+    window.updateCloudAuthUI = function(user) {
+      currentUser = user;
+      const outEl = document.getElementById('cloud-logged-out');
+      const inEl = document.getElementById('cloud-logged-in');
+      const saveInd = document.getElementById('save-indicator');
+
+      if (!outEl || !inEl) return;
+
+      if (user) {
+        outEl.classList.add('hidden');
+        inEl.classList.remove('hidden');
+        inEl.classList.add('flex');
+
+        document.getElementById('user-display-name').textContent = user.displayName || 'Sobrevivente';
+        document.getElementById('user-email').textContent = user.email || '';
+        const avatarImg = document.getElementById('user-avatar');
+        const avatarFallback = document.getElementById('user-avatar-fallback');
+        if (user.photoURL) {
+          avatarImg.src = user.photoURL;
+          avatarImg.classList.remove('hidden');
+          avatarFallback.classList.add('hidden');
+        } else {
+          avatarImg.classList.add('hidden');
+          avatarFallback.classList.remove('hidden');
+          avatarFallback.textContent = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
+        }
+        if (saveInd) saveInd.textContent = '☁ Sincronizado na nuvem';
+      } else {
+        outEl.classList.remove('hidden');
+        inEl.classList.add('hidden');
+        inEl.classList.remove('flex');
+        if (saveInd) saveInd.textContent = '● Salvo localmente';
+      }
+    };
+
+    window.setCloudSyncStatus = function(text) {
+      const el = document.getElementById('cloud-sync-status');
+      if (el) el.textContent = text;
+    };
+
+    function loginWithGoogle() {
+      if (window.cloudAPI) window.cloudAPI.login();
+    }
+
+    function logoutGoogle() {
+      if (window.cloudAPI) window.cloudAPI.logout();
+    }
+
+    function manualCloudRefresh() {
+      if (currentUser && window.cloudAPI) {
+        window.cloudAPI.pullAll(currentUser.uid, true);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      init();
+      if (currentUser) window.updateCloudAuthUI(currentUser);
+    });
+  </script>
+
+  <!-- ===================================================================== -->
+  <!-- FIREBASE SDK (AUTHENTICATION + CLOUD FIRESTORE)                       -->
+  <!-- ===================================================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyByDbb84xMY1EoHzWimbXpOoHxLRxHdIOU",
+      authDomain: "declinio-rpg.firebaseapp.com",
+      projectId: "declinio-rpg",
+      storageBucket: "declinio-rpg.firebasestorage.app",
+      messagingSenderId: "227715429031",
+      appId: "1:227715429031:web:25d8d1edc8a40a50ec2182"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const updateUI = (user) => {
+      if (typeof window.updateCloudAuthUI === 'function') {
+        window.updateCloudAuthUI(user);
+      }
+    };
+
+    const updateStatus = (text) => {
+      if (typeof window.setCloudSyncStatus === 'function') {
+        window.setCloudSyncStatus(text);
+      }
+    };
+
+    getRedirectResult(auth).catch((err) => {
+      console.error('Redirect auth error:', err);
+    });
+
+    async function saveSurvivorToCloud(uid, survivorObj) {
+      if (!uid || !survivorObj || !survivorObj.id) return;
+      try {
+        updateStatus('↻ Salvando na nuvem...');
+        const ref = doc(db, 'users', uid, 'survivors', survivorObj.id);
+        await setDoc(ref, JSON.parse(JSON.stringify(survivorObj)), { merge: true });
+        updateStatus('☁ Sincronizado com a nuvem');
+      } catch (err) {
+        console.error('Firestore save error:', err);
+        updateStatus('⚠ Erro ao sincronizar');
+      }
+    }
+
+    async function deleteSurvivorFromCloud(uid, survivorId) {
+      if (!uid || !survivorId) return;
+      try {
+        updateStatus('↻ Removendo da nuvem...');
+        const ref = doc(db, 'users', uid, 'survivors', survivorId);
+        await deleteDoc(ref);
+        updateStatus('☁ Sincronizado com a nuvem');
+      } catch (err) {
+        console.error('Firestore delete error:', err);
+        updateStatus('⚠ Erro ao remover');
+      }
+    }
+
+    async function pullAndMergeSurvivors(uid, notify = false) {
+      if (!uid) return;
+      try {
+        updateStatus('↻ Sincronizando...');
+        const colRef = collection(db, 'users', uid, 'survivors');
+        const snap = await getDocs(colRef);
+
+        const cloudMap = new Map();
+        snap.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data && data.id) {
+            cloudMap.set(data.id, data);
+          }
+        });
+
+        const localToUpload = [];
+        library.forEach((localChar) => {
+          const cloudChar = cloudMap.get(localChar.id);
+          if (!cloudChar) {
+            cloudMap.set(localChar.id, localChar);
+            localToUpload.push(localChar);
+          } else {
+            const localTs = localChar.updatedTimestamp || 0;
+            const cloudTs = cloudChar.updatedTimestamp || 0;
+            if (localTs > cloudTs) {
+              cloudMap.set(localChar.id, localChar);
+              localToUpload.push(localChar);
+            }
+          }
+        });
+
+        for (const item of localToUpload) {
+          await setDoc(doc(db, 'users', uid, 'survivors', item.id), JSON.parse(JSON.stringify(item)), { merge: true });
+        }
+
+        library = Array.from(cloudMap.values()).sort((a, b) => (b.updatedTimestamp || 0) - (a.updatedTimestamp || 0));
+        saveLibrary();
+
+        if (currentView === 'library') {
+          renderLibrary();
+        } else if (activeCharId && cloudMap.has(activeCharId)) {
+          state = { ...createBlankSurvivor(), ...cloudMap.get(activeCharId) };
+          renderSheet();
+        }
+
+        updateStatus('☁ Sincronizado com a nuvem');
+        if (notify) {
+          showToast(`Biblioteca sincronizada (${library.length} sobrevivente(s))!`);
+        }
+      } catch (err) {
+        console.error('Firestore pull error:', err);
+        updateStatus('⚠ Erro de permissão/rede');
+        showToast('Erro ao carregar dados do Firestore. Verifique as Regras publicadas.');
+      }
+    }
+
+    window.cloudAPI = {
+      login: async () => {
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (err) {
+          if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+            await signInWithRedirect(auth, provider);
+          } else {
+            console.error('Google login error:', err);
+            showToast('Não foi possível entrar com Google. Verifique se o domínio está autorizado no Firebase.');
+          }
+        }
+      },
+      logout: async () => {
+        try {
+          await signOut(auth);
+          showToast('Você saiu da conta Google. Modo local ativo.');
+        } catch (err) {
+          console.error('Logout error:', err);
+        }
+      },
+      saveSurvivor: saveSurvivorToCloud,
+      deleteSurvivor: deleteSurvivorFromCloud,
+      pullAll: pullAndMergeSurvivors
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+      updateUI(user);
+      if (user) {
+        await pullAndMergeSurvivors(user.uid, true);
+      }
+    });
   </script>
 </body>
 </html>

@@ -1,0 +1,18 @@
+{
+  "name": "DECLÍNIO: RPG — Sobreviventes",
+  "short_name": "Declínio RPG",
+  "description": "Criador de personagens, biblioteca de sobreviventes e ficha interativa para Declínio: RPG (ALFA 0.1).",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0c0c0c",
+  "theme_color": "#111111",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23111111'/><rect x='24' y='24' width='464' height='464' fill='none' stroke='%23ffffff' stroke-width='16'/><text x='256' y='295' font-family='monospace' font-weight='900' font-size='220' fill='%23ffffff' text-anchor='middle'>D:</text><text x='256' y='410' font-family='monospace' font-weight='700' font-size='44' letter-spacing='8' fill='%23a3a3a3' text-anchor='middle'>ALFA 0.1</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
